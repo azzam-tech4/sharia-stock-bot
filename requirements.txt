@@ -1,0 +1,8 @@
+python-telegram-bot[ext]
+deep-translator
+yfinance
+python-dotenv
+matplotlib
+arabic_reshaper
+python-bidi
+pandas

@@ -1,0 +1,19 @@
+# مجلد البيئة الافتراضية
+# This is the most important folder to ignore
+venv/
+__pycache__/
+
+# ملف المتغيرات السرية (يحتوي على توكن البوت)
+# NEVER upload this file
+.env
+
+# ملفات قاعدة البيانات المحلية
+*.db
+*.db-*
+
+# ملفات السجلات
+*.log
+
+# ملفات خاصة بنظام التشغيل
+.DS_Store
+Thumbs.db

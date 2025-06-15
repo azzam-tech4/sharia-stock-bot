@@ -7,11 +7,14 @@ import os
 
 logger = logging.getLogger(__name__)
 
-# --- تحديد مسار قاعدة البيانات ليتوافق مع السيرفرات ---
-DATA_DIR = os.environ.get('RENDER_DISK_PATH', '.') 
-DB_FILE = os.path.join(DATA_DIR, "sharia_stock_bot.db")
+# --- *** تم تعديل هذا الجزء ليتوافق مع أي سيرفر *** ---
+# سيستخدم المسار المحدد في متغير البيئة DATA_PATH، وإذا لم يكن موجوداً، سيستخدم المجلد الحالي
+DATA_PATH = os.environ.get('DATA_PATH', '.') 
+DB_FILE = os.path.join(DATA_PATH, "sharia_stock_bot.db")
 
-os.makedirs(DATA_DIR, exist_ok=True) 
+# التأكد من وجود المجلد قبل إنشاء الاتصال
+os.makedirs(DATA_PATH, exist_ok=True) 
+# --- نهاية التعديل ---
 
 try:
     conn = sqlite3.connect(DB_FILE, check_same_thread=False)
@@ -22,6 +25,7 @@ except sqlite3.Error as e:
     logger.error(f"Database connection error: {e}")
     exit()
 
+# (بقية الملف بالكامل تبقى كما هي بدون أي تغيير)
 def initialize_database():
     try:
         cursor.execute("PRAGMA user_version")
@@ -155,23 +159,12 @@ def log_search(chat_id: int, symbol: str):
     except sqlite3.Error as e: logger.error(f"Error logging search for user {chat_id}: {e}")
 
 def get_bot_stats() -> dict:
-    stats = {
-        'total_users': 0, 'new_users_today': 0, 'new_users_week': 0, 'new_users_month': 0,
-        'total_searches': 0, 'searches_today': 0, 'searches_yesterday': 0,
-        'searches_this_week': 0, 'searches_last_week': 0,
-        'searches_this_month': 0, 'searches_last_month': 0,
-        'active_users_today': 0, 'active_users_week': 0, 'active_users_month': 0,
-        'language_distribution': {}, 'top_stocks_overall': [], 'top_stocks_month': [],
-        'top_stocks_week': [], 'top_stocks_day': []
-    }
+    stats = {'total_users': 0, 'new_users_today': 0, 'new_users_week': 0, 'new_users_month': 0, 'total_searches': 0, 'searches_today': 0, 'searches_yesterday': 0, 'searches_this_week': 0, 'searches_last_week': 0, 'searches_this_month': 0, 'searches_last_month': 0, 'active_users_today': 0, 'active_users_week': 0, 'active_users_month': 0, 'language_distribution': {}, 'top_stocks_overall': [], 'top_stocks_month': [], 'top_stocks_week': [], 'top_stocks_day': []}
     try:
-        # User Stats
         cursor.execute("SELECT COUNT(*) FROM users"); stats['total_users'] = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(*) FROM users WHERE date(join_date) = date('now')"); stats['new_users_today'] = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(*) FROM users WHERE strftime('%Y-%W', join_date) = strftime('%Y-%W', 'now')"); stats['new_users_week'] = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(*) FROM users WHERE strftime('%Y-%m', join_date) = strftime('%Y-%m', 'now')"); stats['new_users_month'] = cursor.fetchone()[0]
-        
-        # Search Stats
         cursor.execute("SELECT COUNT(*) FROM searches"); stats['total_searches'] = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(*) FROM searches WHERE date(search_time) = date('now')"); stats['searches_today'] = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(*) FROM searches WHERE date(search_time) = date('now', '-1 day')"); stats['searches_yesterday'] = cursor.fetchone()[0]
@@ -179,19 +172,14 @@ def get_bot_stats() -> dict:
         cursor.execute("SELECT COUNT(*) FROM searches WHERE strftime('%Y-%W', search_time) = strftime('%Y-%W', 'now', '-7 days')"); stats['searches_last_week'] = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(*) FROM searches WHERE strftime('%Y-%m', search_time) = strftime('%Y-%m', 'now')"); stats['searches_this_month'] = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(*) FROM searches WHERE strftime('%Y-%m', search_time) = strftime('%Y-%m', 'now', '-1 month')"); stats['searches_last_month'] = cursor.fetchone()[0]
-
-        # Active Users Stats
         cursor.execute("SELECT COUNT(DISTINCT chat_id) FROM searches WHERE date(search_time) = date('now')"); stats['active_users_today'] = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(DISTINCT chat_id) FROM searches WHERE strftime('%Y-%W', search_time) = strftime('%Y-%W', 'now')"); stats['active_users_week'] = cursor.fetchone()[0]
         cursor.execute("SELECT COUNT(DISTINCT chat_id) FROM searches WHERE strftime('%Y-%m', search_time) = strftime('%Y-%m', 'now')"); stats['active_users_month'] = cursor.fetchone()[0]
-
         cursor.execute("SELECT language, COUNT(*) FROM users GROUP BY language"); stats['language_distribution'] = {lang: count for lang, count in cursor.fetchall()}
-        
         base_query = "SELECT symbol_searched, COUNT(*) as c FROM searches WHERE {} GROUP BY symbol_searched ORDER BY c DESC LIMIT 5"
         stats['top_stocks_overall'] = cursor.execute(base_query.format("1=1")).fetchall()
         stats['top_stocks_month'] = cursor.execute(base_query.format("strftime('%Y-%m', search_time) = strftime('%Y-%m', 'now')")).fetchall()
         stats['top_stocks_week'] = cursor.execute(base_query.format("strftime('%Y-%W', search_time) = strftime('%Y-%W', 'now')")).fetchall()
         stats['top_stocks_day'] = cursor.execute(base_query.format("date(search_time) = date('now')")).fetchall()
-        
     except sqlite3.Error as e: logger.error(f"Error getting bot stats: {e}")
     return stats

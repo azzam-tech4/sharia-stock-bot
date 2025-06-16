@@ -89,77 +89,104 @@ def _get_financial_value(dataframe, key, default=None):
             return default
     return default
 
+# --- *** تم تعديل هذا الجزء بالكامل لإصلاح الأخطاء *** ---
 def fetch_yfinance(symbol: str):
     ticker = None
     info = None
     try:
         ticker = yf.Ticker(symbol)
         info = ticker.info
-    except HTTPError as e:
-        if e.response.status_code == 404: raise ValueError("not_found")
-        logger.error(f"HTTPError fetching data for {symbol}: {e}"); raise ValueError(f"connection_error:{str(e)}")
+        if not info or (not info.get("longName") and not info.get("shortName")):
+            raise ValueError("not_found")
     except Exception as e:
-        logger.error(f"Unexpected error during yfinance fetch for {symbol}: {e}"); raise ValueError(f"error:{str(e)}")
-
-    if not info or not info.get("longName") and not info.get("shortName"):
-        raise ValueError("not_found")
+        logger.error(f"Failed to fetch initial info for {symbol}: {e}")
+        raise ValueError("not_found") from e
 
     company_all = info.get("longName", info.get("shortName", symbol))
     sector = info.get("sector")
     subsector = info.get("industry")
     haram = is_haram_activity(sector, subsector)
-    market_cap, total_debt, total_assets, total_revenue, interest_income = info.get("marketCap"), info.get("totalDebt"), info.get("totalAssets"), info.get("totalRevenue"), info.get("interestIncome")
-    try:
-        if ticker:
-            qf = ticker.quarterly_financials
-            qbs = ticker.quarterly_balance_sheet
-            total_revenue = _get_financial_value(qf, "Total Revenue", total_revenue)
-            interest_income = _get_financial_value(qf, "Interest Income", interest_income)
-            total_debt = _get_financial_value(qbs, "Total Debt", total_debt)
-            total_assets = _get_financial_value(qbs, "Total Assets", total_assets)
-    except Exception as e: logger.warning(f"Error fetching quarterly financials for {symbol}: {e}")
+
+    market_cap = info.get("marketCap")
+    qf = ticker.quarterly_financials
+    qbs = ticker.quarterly_balance_sheet
+
+    total_revenue = _get_financial_value(qf, "Total Revenue", info.get("totalRevenue"))
+    interest_income = _get_financial_value(qf, "Interest Income", info.get("interestIncome"))
+    total_debt = _get_financial_value(qbs, "Total Debt", info.get("totalDebt"))
+    total_assets = _get_financial_value(qbs, "Total Assets", info.get("totalAssets"))
+
     core_financials = [total_revenue, total_debt, total_assets, market_cap]
-    if sum(1 for x in core_financials if x is not None and not (isinstance(x, float) and math.isnan(x))) < 3:
+    if sum(1 for x in core_financials if x is not None) < 3:
         raise ValueError("not_found")
+
     purification_ratio = None
     if interest_income is not None and total_revenue is not None and total_revenue > 0:
-        if not math.isnan(interest_income) and not math.isnan(total_revenue):
-            purification_ratio = (abs(interest_income) / total_revenue) * 100
+        purification_ratio = (abs(interest_income) / total_revenue) * 100
 
+    # --- دوال التحقق من الشرعية (الطريقة المفصلة والصحيحة) ---
     def is_halal_bilad():
         try:
             if haram: return "haram_activity"
-            if any(x is None or (isinstance(x, float) and math.isnan(x)) for x in [total_revenue, total_debt, total_assets]):
+            
+            if any(x is None for x in [total_debt, total_assets]):
                 return "unknown"
             
-            cond1_pass = True
-            if interest_income is not None and total_revenue is not None and total_revenue > 0:
-                if not (isinstance(interest_income, float) and math.isnan(interest_income)):
+            # --- *** بداية التعديل *** ---
+            # إذا كانت الإيرادات صفر، لا يمكن التحقق من الشرط، وبالتالي السهم غير شرعي
+            if total_revenue is None or total_revenue == 0:
+                # لكن إذا كان دخل الفوائد أيضاً صفر أو غير موجود، يمكننا اعتبار الشرط الأول محققاً
+                if interest_income is None or interest_income == 0:
+                    cond1_pass = True
+                else: # إيرادات صفر ولكن فوائد موجودة = غير شرعي
+                    return "non_compliant"
+            else: # إذا كانت الإيرادات موجودة، نطبق النسبة
+                cond1_pass = True
+                if interest_income is not None:
                     cond1_pass = (abs(interest_income) / total_revenue) < 0.05
+            # --- *** نهاية التعديل *** ---
+
+            cond2_pass = (total_debt / total_assets) < 0.33 if total_assets > 0 else False
             
-            cond2_pass = (total_debt / total_assets) < 0.3 if total_assets > 0 else False
             return "compliant" if cond1_pass and cond2_pass else "non_compliant"
-        except (TypeError, ZeroDivisionError): return "unknown"
+        except (TypeError, ZeroDivisionError):
+            return "unknown"
+
     def is_halal_rajhi():
         try:
             if haram: return "haram_activity"
-            if any(x is None or (isinstance(x, float) and math.isnan(x)) for x in [total_revenue, total_debt, market_cap]):
+
+            if any(x is None for x in [total_debt, market_cap]):
                 return "unknown"
 
-            cond1_pass = True
-            if interest_income is not None and total_revenue is not None and total_revenue > 0:
-                 if not (isinstance(interest_income, float) and math.isnan(interest_income)):
+            # --- *** بداية التعديل *** ---
+            if total_revenue is None or total_revenue == 0:
+                if interest_income is None or interest_income == 0:
+                    cond1_pass = True
+                else:
+                    return "non_compliant"
+            else:
+                cond1_pass = True
+                if interest_income is not None:
                     cond1_pass = (abs(interest_income) / total_revenue) < 0.05
+            # --- *** نهاية التعديل *** ---
             
-            cond2_pass = (total_debt / market_cap) < 0.3 if market_cap > 0 else False
+            cond2_pass = (total_debt / market_cap) < 0.30 if market_cap > 0 else False
+            
             return "compliant" if cond1_pass and cond2_pass else "non_compliant"
-        except (TypeError, ZeroDivisionError): return "unknown"
+        except (TypeError, ZeroDivisionError):
+            return "unknown"
 
     compliance_results = [("بنك البلاد", is_halal_bilad()), ("بنك الراجحي", is_halal_rajhi())]
-    report_date = str(ticker.quarterly_financials.columns[0].date()) if 'ticker' in locals() and ticker and not ticker.quarterly_financials.empty else MESSAGES["ar"]["not_available"]
+    
+    report_date = str(qf.columns[0].date()) if qf is not None and not qf.empty else MESSAGES["ar"]["not_available"]
+    
     return company_all, sector, subsector, compliance_results, {"market_cap": market_cap, "total_revenue": total_revenue, "total_debt": total_debt, "interest_income": interest_income, "total_assets": total_assets, "purification_ratio": purification_ratio}, report_date, interest_income, total_revenue
+# --- نهاية منطقة الدمج ---
+
 
 def _build_financial_report_text(lang, company, sym, metrics_data, report_date, interest_income, total_revenue):
+    # (هذه الدالة تبقى كما هي بدون تغيير)
     parts = [MESSAGES[lang]["financial_report_header"].format(company=company, sym=sym)]
     financial_metrics_config = {"market_cap": {"ar": "القيمة السوقية", "en": "Market Cap"}, "total_revenue": {"ar": "مجموع الإيرادات", "en": "Total Revenue"}, "total_debt": {"ar": "إجمالي الديون", "en": "Total Debt"}, "interest_income": {"ar": "الدخل من الفوائد", "en": "Interest Income"}, "interest_income_ratio": {"ar": "الدخل من الفوائد/مجموع الإيرادات", "en": "Interest Income/Total Revenue"}, "total_debt_market_cap_ratio": {"ar": "مجموع الديون/القيمة السوقية", "en": "Total Debt/Market Cap"}, "total_assets": {"ar": "إجمالي الأصول", "en": "Total Assets"}, "debt_to_assets_ratio": {"ar": "نسبة الدين إلى الأصل", "en": "Debt to Assets Ratio"}}
     def get_formatted_value(key, value, lang):
@@ -198,28 +225,16 @@ async def on_lang_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = db.get_user_setting(update.effective_chat.id, 'language', 'ar')
     await update.message.reply_text(MESSAGES[lang]["help"], parse_mode=ParseMode.HTML)
-
-# --- *** تم تعديل هذه الدالة بالكامل لإصلاح التنسيق *** ---
 def create_stats_image(stats: dict) -> BytesIO:
     plt.rcParams['font.family'] = 'Arial'
     def ar(text): return get_display(arabic_reshaper.reshape(str(text)))
-    
-    fig = plt.figure(figsize=(8, 13), dpi=150)
+    fig = plt.figure(figsize=(8, 14), dpi=150)
     fig.patch.set_facecolor('#f4f4f4')
+    fig.text(0.5, 0.96, ar("📊 إحصائيات البوت الحية"), ha='center', va='center', fontsize=22, weight='bold')
 
-    # --- استخدام نظام تحديد المواقع اليدوي ---
-    current_y = 0.96
-    
-    # العنوان الرئيسي
-    fig.text(0.5, current_y, ar("📊 إحصائيات البوت الحية"), ha='center', va='center', fontsize=22, weight='bold')
-    current_y -= 0.1
-
-    def draw_table_at(y_pos, height, ax_x, ax_width, title, data, col_labels, col_widths):
-        # إضافة عنوان فوق الجدول
-        fig.text(ax_x + ax_width / 2, y_pos, ar(title), ha='center', va='bottom', fontsize=15, weight='bold')
-        
-        # إنشاء الجدول
-        ax = fig.add_axes([ax_x, y_pos - height, ax_width, height])
+    def draw_table_at(x_pos, y_pos, width, height, title, data, col_labels, col_widths):
+        fig.text(x_pos + width / 2, y_pos, ar(title), ha='center', va='bottom', fontsize=15, weight='bold')
+        ax = fig.add_axes([x_pos, y_pos - height, width, height * 0.9])
         ax.axis('off')
         
         table = ax.table(cellText=data, colLabels=col_labels, colWidths=col_widths, cellLoc='center', loc='center')
@@ -235,56 +250,35 @@ def create_stats_image(stats: dict) -> BytesIO:
             else:
                 cell.set_facecolor('#FFFFFF')
                 cell.set_text_props(ha='right' if key[1] == 1 else 'center')
-        return height + 0.05 # إرجاع الارتفاع المستخدم + مسافة فاصلة
-
-    # بيانات المستخدمين والبحث
-    user_data = [
-        [ar(stats['total_users']), ar("الإجمالي")],
-        [ar(stats['active_users_today']), ar("النشطون (اليوم)")],
-        [ar(stats['active_users_week']), ar("النشطون (أسبوع)")],
-        [ar(stats['active_users_month']), ar("النشطون (شهر)")],
-        [ar(stats['new_users_today']), ar("الجدد (اليوم)")],
-        [ar(stats['new_users_week']), ar("الجدد (أسبوع)")],
-        [ar(stats['new_users_month']), ar("الجدد (شهر)")],
-    ]
-    search_data = [
-        [ar(stats['total_searches']), ar("الإجمالي")],
-        [ar(stats['searches_today']), ar("اليوم")],
-        [ar(stats['searches_yesterday']), ar("أمس")],
-        [ar(stats['searches_this_week']), ar("هذا الأسبوع")],
-        [ar(stats['searches_last_week']), ar("الأسبوع الماضي")],
-        [ar(stats['searches_this_month']), ar("هذا الشهر")],
-        [ar(stats['searches_last_month']), ar("الشهر الماضي")],
-    ]
+    
+    user_data = [[ar(stats['total_users']), ar("الإجمالي")], [ar(stats['active_users_today']), ar("النشطون (اليوم)")], [ar(stats['active_users_week']), ar("النشطون (أسبوع)")], [ar(stats['active_users_month']), ar("النشطون (شهر)")],[ar(stats['new_users_today']), ar("الجدد (اليوم)")], [ar(stats['new_users_week']), ar("الجدد (أسبوع)")],[ar(stats['new_users_month']), ar("الجدد (شهر)")] ]
+    search_data = [[ar(stats['total_searches']), ar("الإجمالي")], [ar(stats['searches_today']), ar("اليوم")], [ar(stats['searches_yesterday']), ar("أمس")], [ar(stats['searches_this_week']), ar("هذا الأسبوع")], [ar(stats['searches_last_week']), ar("الأسبوع الماضي")], [ar(stats['searches_this_month']), ar("هذا الشهر")], [ar(stats['searches_last_month']), ar("الشهر الماضي")] ]
     lang_data = [[ar(count), ar("العربية" if lang == 'ar' else "English")] for lang, count in stats['language_distribution'].items()] or [[ar(0), ar("لا يوجد")]]
     
     def format_stock_data(stock_list):
         if not stock_list: return [[ar("-"), ar("-")]]
         return [[ar(f"{count}"), ar(symbol)] for symbol, count in stock_list]
 
-    # رسم الجداول العلوية
-    h = draw_table_at(current_y, 0.22, 0.05, 0.4, "👤 المستخدمون", user_data, None, [0.4, 0.6])
-    draw_table_at(current_y, 0.22, 0.55, 0.4, "🔍 عمليات البحث", search_data, None, [0.4, 0.6])
-    current_y -= h
+    y = 0.90
+    draw_table_at(0.05, y, 0.43, 0.28, "👤 المستخدمون", user_data, None, [0.4, 0.6])
+    draw_table_at(0.52, y, 0.43, 0.28, "🔍 عمليات البحث", search_data, None, [0.4, 0.6])
+    y -= 0.33
     
-    # جدول اللغات
-    h = draw_table_at(current_y, 0.1, 0.1, 0.8, "🌐 توزيع اللغات", lang_data, [ar("العدد"), ar("اللغة")], [0.4, 0.6])
-    current_y -= h
+    draw_table_at(0.1, y, 0.8, 0.1, "🌐 توزيع اللغات", lang_data, [ar("العدد"), ar("اللغة")], [0.4, 0.6])
+    y -= 0.15
 
-    # جداول الأسهم الأكثر بحثاً
-    h = draw_table_at(current_y, 0.15, 0.05, 0.4, "⭐ الأكثر بحثاً (اليوم)", format_stock_data(stats['top_stocks_day']), [ar("العدد"), ar("الرمز")], [0.4, 0.6])
-    draw_table_at(current_y, 0.15, 0.55, 0.4, "⭐ الأكثر بحثاً (الأسبوع)", format_stock_data(stats['top_stocks_week']), [ar("العدد"), ar("الرمز")], [0.4, 0.6])
-    current_y -= h
+    draw_table_at(0.05, y, 0.43, 0.18, "⭐ الأكثر بحثاً (اليوم)", format_stock_data(stats['top_stocks_day']), [ar("العدد"), ar("الرمز")], [0.4, 0.6])
+    draw_table_at(0.52, y, 0.43, 0.18, "⭐ الأكثر بحثاً (الأسبوع)", format_stock_data(stats['top_stocks_week']), [ar("العدد"), ar("الرمز")], [0.4, 0.6])
+    y -= 0.23
     
-    h = draw_table_at(current_y, 0.15, 0.05, 0.4, "⭐ الأكثر بحثاً (الشهر)", format_stock_data(stats['top_stocks_month']), [ar("العدد"), ar("الرمز")], [0.4, 0.6])
-    draw_table_at(current_y, 0.15, 0.55, 0.4, "⭐ الأكثر بحثاً (الإجمالي)", format_stock_data(stats['top_stocks_overall']), [ar("العدد"), ar("الرمز")], [0.4, 0.6])
+    draw_table_at(0.05, y, 0.43, 0.18, "⭐ الأكثر بحثاً (الشهر)", format_stock_data(stats['top_stocks_month']), [ar("العدد"), ar("الرمز")], [0.4, 0.6])
+    draw_table_at(0.52, y, 0.43, 0.18, "⭐ الأكثر بحثاً (الإجمالي)", format_stock_data(stats['top_stocks_overall']), [ar("العدد"), ar("الرمز")], [0.4, 0.6])
 
     buf = BytesIO()
     plt.savefig(buf, format='png')
     buf.seek(0)
     plt.close(fig)
     return buf
-
 async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cid = update.effective_chat.id
     lang = db.get_user_setting(cid, 'language', 'ar')
@@ -305,7 +299,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_state = db.get_user_state(cid)
     
     if cid in ADMIN_CHAT_IDS and user_state and "broadcast" in user_state.get("state", ""):
-        # Broadcast logic handling...
+        # Broadcast logic here...
         return
 
     if user_state and user_state.get("state") == "waiting_for_profit_amount":

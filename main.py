@@ -191,15 +191,23 @@ def _build_financial_report_text(lang, company, sym, metrics_data, report_date, 
     financial_metrics_config = {"market_cap": {"ar": "القيمة السوقية", "en": "Market Cap"}, "total_revenue": {"ar": "مجموع الإيرادات", "en": "Total Revenue"}, "total_debt": {"ar": "إجمالي الديون", "en": "Total Debt"}, "interest_income": {"ar": "الدخل من الفوائد", "en": "Interest Income"}, "interest_income_ratio": {"ar": "الدخل من الفوائد/مجموع الإيرادات", "en": "Interest Income/Total Revenue"}, "total_debt_market_cap_ratio": {"ar": "مجموع الديون/القيمة السوقية", "en": "Total Debt/Market Cap"}, "total_assets": {"ar": "إجمالي الأصول", "en": "Total Assets"}, "debt_to_assets_ratio": {"ar": "نسبة الدين إلى الأصل", "en": "Debt to Assets Ratio"}}
     def get_formatted_value(key, value, lang):
         if key == "interest_income_ratio":
-            if interest_income is not None and total_revenue is not None and total_revenue > 0: return f"{abs(interest_income)/total_revenue:.2%}"
+            if interest_income is not None and total_revenue is not None and total_revenue > 0:
+                return f"{abs(interest_income)/total_revenue:.2%}"
             return MESSAGES[lang]["not_available"]
         elif key == "total_debt_market_cap_ratio":
-            if metrics_data.get("total_debt") is not None and metrics_data.get("market_cap", 0) > 0: return f"{metrics_data['total_debt']/metrics_data['market_cap']:.2%}"
+            debt = metrics_data.get("total_debt")
+            market_cap = metrics_data.get("market_cap")
+            if debt is not None and market_cap is not None and market_cap > 0:
+                return f"{debt/market_cap:.2%}"
             return MESSAGES[lang]["not_available"]
         elif key == "debt_to_assets_ratio":
-            if metrics_data.get("total_debt") is not None and metrics_data.get("total_assets", 0) > 0: return f"{metrics_data['total_debt']/metrics_data['total_assets']:.2%}"
+            debt = metrics_data.get("total_debt")
+            assets = metrics_data.get("total_assets")
+            if debt is not None and assets is not None and assets > 0:
+                return f"{debt/assets:.2%}"
             return MESSAGES[lang]["not_available"]
-        else: return nice(value, lang)
+        else:
+            return nice(value, lang)
     for key, names in financial_metrics_config.items():
         parts.append(f"• {names[lang]}: {get_formatted_value(key, metrics_data.get(key), lang)}")
     parts.append(MESSAGES[lang]["report_date"].format(date=report_date))

@@ -132,7 +132,7 @@ def fetch_interest_income_from_web(symbol):
         logger.error(f"CRITICAL: Web scraping for {symbol} failed. Error: {e}")
         return None
 
-# --- *** تم تعديل هذه الدالة لتضمين ميزة كشط الويب المحسنة *** ---
+# --- *** تم تعديل هذه الدالة لتضمين ميزة التحقق من نوع السهم *** ---
 def fetch_yfinance(symbol: str):
     ticker = None
     info = None
@@ -147,6 +147,16 @@ def fetch_yfinance(symbol: str):
 
     if not info or not info.get("longName") and not info.get("shortName"):
         raise ValueError("not_found")
+        
+    # --- بداية التعديل المطلوب ---
+    # التحقق من نوع الورقة المالية. الأسهم العادية نوعها 'EQUITY'
+    # الصناديق الاستثمارية وغيرها ليس لها نفس البيانات المالية.
+    quote_type = info.get('quoteType')
+    # نرفض أي شيء ليس سهماً عادياً (EQUITY) أو إذا كان لا يحتوي على قطاع
+    if quote_type != 'EQUITY' or not info.get('sector'):
+        logger.info(f"Symbol {symbol} is of an unsupported type ('{quote_type}') or has no sector. Rejecting.")
+        raise ValueError("not_found")
+    # --- نهاية التعديل المطلوب ---
 
     company_all = info.get("longName", info.get("shortName", symbol))
     sector = info.get("sector")
@@ -196,7 +206,7 @@ def fetch_yfinance(symbol: str):
     logger.info(f"Market Cap: {market_cap}")
     logger.info(f"Total Assets: {total_assets}")
     logger.info(f"------------------------")
-        
+         
     purification_ratio = None
     if interest_income is not None and total_revenue is not None and not (isinstance(interest_income, float) and math.isnan(interest_income)) and not (isinstance(total_revenue, float) and math.isnan(total_revenue)) and total_revenue > 0:
         purification_ratio = (abs(interest_income) / total_revenue) * 100

@@ -191,6 +191,7 @@ def fetch_yfinance(symbol: str):
     if interest_income is not None and total_revenue is not None and not (isinstance(interest_income, float) and math.isnan(interest_income)) and not (isinstance(total_revenue, float) and math.isnan(total_revenue)) and total_revenue > 0:
         purification_ratio = (abs(interest_income) / total_revenue) * 100
 
+    # --- *** بداية الجزء الذي تم تعديله *** ---
     def get_compliance_status(bank_name):
         try:
             if haram: 
@@ -225,16 +226,28 @@ def fetch_yfinance(symbol: str):
                 else:
                     debt_check_result = False
             
-            all_checks = [rev_check_result, debt_check_result]
-            
-            if False in all_checks:
-                return "non_compliant"
-            if None in all_checks:
+            # --- المنطق الجديد للتحقق ---
+            # نقوم بجمع الشروط التي تمكنا من التحقق منها فقط (التي ليست None)
+            valid_checks = []
+            if rev_check_result is not None:
+                valid_checks.append(rev_check_result)
+            if debt_check_result is not None:
+                valid_checks.append(debt_check_result)
+
+            # إذا لم نتمكن من التحقق من أي شرط، فالحالة غير محددة
+            if not valid_checks:
                 return "unknown"
+
+            # إذا كان أي شرط من الشروط التي تم التحقق منها خاطئاً، فالسهم غير متوافق
+            if False in valid_checks:
+                return "non_compliant"
+            
+            # إذا وصلنا إلى هنا، فهذا يعني أن كل الشروط التي تم التحقق منها صحيحة
             return "compliant"
 
         except (TypeError, ZeroDivisionError):
             return "unknown"
+    # --- *** نهاية الجزء الذي تم تعديله *** ---
 
     bilad_status = get_compliance_status("Al-Bilad")
     rajhi_status = get_compliance_status("Al-Rajhi")

@@ -120,21 +120,46 @@ def fetch_interest_income_from_web(symbol):
         logger.error(f"CRITICAL: Web scraping for {symbol} failed. Error: {e}")
         return None
 
-def fetch_yfinance(symbol: str):
+def fetch_yfinance(symbol: str, retries=3, delay=2):
+    """
+    Fetches stock data from yfinance with a retry mechanism to handle intermittent HTTP errors.
+    """
     ticker = None
     info = None
-    try:
-        ticker = yf.Ticker(symbol)
-        info = ticker.info
-    except HTTPError as e:
-        if e.response.status_code == 404: raise ValueError("not_found")
-        logger.error(f"HTTPError fetching data for {symbol}: {e}"); raise ValueError(f"connection_error:{str(e)}")
-    except Exception as e:
-        logger.error(f"Unexpected error during yfinance fetch for {symbol}: {e}"); raise ValueError(f"error:{str(e)}")
+    last_exception = None
 
-    if not info or not info.get("longName") and not info.get("shortName"):
-        raise ValueError("not_found")
+    for attempt in range(retries):
+        try:
+            ticker = yf.Ticker(symbol)
+            info = ticker.info
+            # If data is present and complete, break the loop
+            if info and info.get("longName"):
+                logger.info(f"Successfully fetched data for {symbol} on attempt {attempt + 1}.")
+                break
+            else:
+                logger.warning(f"Attempt {attempt + 1}/{retries} for {symbol} returned incomplete data. Retrying in {delay}s...")
+                info = None # Ensure info is None to continue retrying
         
+        except HTTPError as e:
+            last_exception = e
+            if e.response.status_code == 404:
+                logger.error(f"HTTP 404 Not Found for {symbol}. Ticker does not exist.")
+                raise ValueError("not_found")
+            logger.error(f"HTTP Error on attempt {attempt + 1}/{retries} for {symbol}: {e}. Retrying...")
+        except Exception as e:
+            last_exception = e
+            logger.error(f"Unexpected error on attempt {attempt + 1}/{retries} for {symbol}: {e}. Retrying...")
+        
+        # Wait before the next attempt
+        time.sleep(delay)
+
+    # If all retries fail, raise an error
+    if not info:
+        error_message = f"error: Failed to fetch data for {symbol} after {retries} attempts. Last error: {last_exception}"
+        logger.critical(error_message)
+        raise ValueError(error_message)
+        
+    # --- The rest of the original function logic starts here ---
     quote_type = info.get('quoteType')
     if quote_type != 'EQUITY' or not info.get('sector'):
         logger.info(f"Symbol {symbol} is of an unsupported type ('{quote_type}') or has no sector. Rejecting.")
@@ -479,6 +504,7 @@ async def show_financial_report(update: Update, context: ContextTypes.DEFAULT_TY
             parse_mode=ParseMode.HTML
         )
     else:
+
         lang_code = db.get_user_setting(cid, 'language', 'ar')
         await q.message.reply_text(MESSAGES[lang_code]["data_expired"].format(sym=sym), parse_mode=ParseMode.HTML)
 

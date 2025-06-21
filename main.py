@@ -51,7 +51,7 @@ def is_haram_activity(sector, subsector):
         if word.lower() in text: return True
     return False
 SAR_EXCHANGE_RATE = 3.75
-MESSAGES = { "en": { "choose_lang": "Please choose your language:", "lang_set": "✅ Language set to English.\n\n👋 Hello {user_mention}! Send me a stock symbol (e.g. GOOG or AAPL).", "start": "👋 Hello {user_mention}! Send me a stock symbol (e.g. GOOG or AAPL).", "searching": "Searching for {sym}... ⏳", "not_found": "⚠️ The symbol '{sym}' is not supported.", "error": "❗ An unexpected error occurred while fetching data for '{sym}':\n{err}", "rate_limit": "Please wait {delta} seconds before trying again.", "help": ("/start – Start bot\n" "/lang  – Change language\n" "/help  – Show help\n\n" "Usage:\n" "1. First send /start and choose your language.\n" "2. Then send a stock symbol to get its full results.\n" "You don’t need to send /start again each time."), "header": "📈 Shariah status for {company} ({sym}):", "sector": "• Sector: {sec}", "subsector": "• Sub-sector: {sub}", "financial_report_header": "📊 Financial Report for {company} ({sym}):", "compliance_statuses": {"compliant": "Sharia-compliant ✅", "non_compliant": "Not Sharia-compliant ❌", "haram_activity": "Not Sharia-compliant ❌", "unknown": "Unknown ❓"}, "not_available": "N/A", "report_date": "• Report Date: {date}", "purification_ratio_display": "• Purification Ratio: {ratio}", "purification_mixed_text": " (Mixed)", "show_financial_report_button": "📊 Show Financial Report", "calculate_purification_button": "🧮 Purification Calculator", "choose_profit_type": "Please choose the type of profit for {sym}:", "profit_type_capital_gains": "Capital Gains (Sale Profit)", "profit_type_dividends": "Dividends (Profit Distributions)", "enter_profit_amount": "Please enter the {profit_type} amount for {sym} (e.g., 1000 or 50.5):", "purification_result_capital_gains": ("For your capital gains of {amount} from {company} ({sym}), the amount to purify is: {purified_amount_usd:.2f} $\n" "This is equivalent to Saudi Riyals: {purified_amount_sar:.2f} SR\n\n" "You can pay the purification amount on Ehsan platform via this link: https://ehsan.sa/stockspurification"), "purification_result_dividends": ("For your dividends of {amount} from {company} ({sym}), the amount to purify is: {purified_amount_usd:.2f} $\n" "This is equivalent to Saudi Riyals: {purified_amount_sar:.2f} SR\n\n" "You can pay the purification amount on Ehsan platform via this link: https://ehsan.sa/stockspurification"), "invalid_amount": "Invalid amount. Please enter a numerical value (e.g., 1000 or 50.5).", "data_expired": "Purification/financial data for '{sym}' is not found or expired. Please search for the stock again by sending its symbol.", "purification_not_available": "Calculation is not available for '{sym}' as its purification ratio is not provided.", "command_start_desc": "Start bot / بدأ البوت", "command_lang_desc": "Change language / تغير اللغة", "command_help_desc": "Show help / عرض المساعدة", "command_broadcast_text_desc": "Broadcast text message to all users", "command_broadcast_photo_desc": "Broadcast photo to all users", "command_broadcast_video_desc": "Broadcast video to all users", "command_stats_desc": "Show bot statistics (Admin)", "disclaimer_message": "\n\n<b>⚠️ Important Disclaimer! ⚠️</b>\n<b>To disclaim responsibility before God for any error in Sharia calculation, we have strived as much as possible to obtain data accurately, but you remain solely responsible for your decision to invest or own the stock.</b>", "purification_not_allowed": "Sorry, calculation is not allowed for '{sym}' as it is not Shariah-compliant.", "purification_unavailable_for_calc": "Sorry, purification calculation is not available for '{sym}' as its data is not provided.", "share_bot_button": "➡️ Share Bot", "connection_error": "⚠️ Could not connect to data server. Please try again later.", "not_authorized_admin": "You are not authorized to use this command.", "broadcast_text_usage": "Please reply to this message with the text you want to broadcast.", "broadcast_photo_usage": "Please reply to this message with the photo you want to broadcast.", "broadcast_video_usage": "Please reply to this message with the video you want to broadcast.", "broadcast_started": "Starting broadcast to {count} users...", "broadcast_text_sent_summary": "Text broadcast sent successfully to {sent_count} users.\nFailed to send to {failed_count} users.", "broadcast_media_sent_summary": "Media broadcast sent successfully to {sent_count} users.\nFailed to send to {failed_count} users.", "no_media_found": "No photo or video found in your message.", "no_text_found_for_broadcast": "No text found in your message.", "market_cap_update_label": "Last Updated", }, "ar": { "choose_lang": "اختر لغتك:", "lang_set": "✅ تم اختيار اللغة العربية.\n\n👋 أهلاً بك يا {user_mention}! أرسل رمز السهم (مثلاً GOOG أو AAPL).", "start": "👋 أهلاً بك يا {user_mention}! أرسل رمز السهم (مثلاً GOOG أو AAPL).", "searching": "جاري البحث عن {sym}... ⏳", "not_found": "⚠️ السهم '{sym}' غير مدعوم.", "error": "❗ حدث خطأ غير متوقع أثناء جلب البيانات للسهم '{sym}':\n{err}", "rate_limit": "يرجى الانتظار {delta} ثانية وإرسال طلبك مرة أخرى.", "help": ("/start – ابدأ البوت\n" "/lang  – غيّر اللغة\n" "/help  – عرض المساعدة\n\n" "طريقة الاستخدام:\n" "1. في المرة الأولى أرسل /start واختر اللغة.\n" "2. بعدها أرسل رمز السهم لتحصل على نتائجه كاملة.\n" "لا تحتاج لإعادة /start في كل مرة."), "header": "📈 شرعية سهم {company} ({sym}):", "sector": "• القطاع: {sec}", "subsector": "• القطاع الفرعي: {sub}", "financial_report_header": "📊 التقرير المالي لسهم {company} ({sym}):", "compliance_statuses": {"compliant": "متوافق مع الضوابط الشرعية ✅", "non_compliant": "غير متوافق مع الضوابط الشرعية ❌", "haram_activity": "نشاط الشركة غير شرعي ❌", "unknown": "غير محدد ❓"}, "not_available": "غير متوفر", "report_date": "• تاريخ التقرير: {date}", "purification_ratio_display": "• نسبة التطهير: {ratio}", "purification_mixed_text": " (مختلط)", "show_financial_report_button": "📊 عرض التقرير المالي", "calculate_purification_button": "🧮 حاسبة التطهير", "choose_profit_type": "الرجاء اختيار نوع الربح لسهم {sym}:", "profit_type_capital_gains": "أرباح بيع (أرباح رأسمالية)", "profit_type_dividends": "توزيعات أرباح", "enter_profit_amount": "الرجاء إدخال مبلغ {profit_type} لسهم {sym} (مثلاً 1000 أو 50.5):", "purification_result_capital_gains": ("لربحك الرأسمالي البالغ {amount} من سهم {company} ({sym})، المبلغ الواجب تطهيره هو: {purified_amount_usd:.2f} $\n" "وهذا يعادل بالريال السعودي: {purified_amount_sar:.2f} SR\n\n" "بالإمكان دفع قيمة التطهير على موقع إحسان من خلال الرابط: https://ehsan.sa/stockspurification"), "purification_result_dividends": ("لتوزيعات أرباحك البالغة {amount} من سهم {company} ({sym})، المبلغ الواجب تطهيره هو: {purified_amount_usd:.2f} $\n" "وهذا يعادل بالريال السعودي: {purified_amount_sar:.2f} SR\n\n" "بالإمكان دفع قيمة التطهير على موقع إحسان من خلال الرابط: https://ehsan.sa/stockspurification"), "invalid_amount": "مبلغ غير صالح. الرجاء إدخال قيمة رقمية (مثلاً 1000 أو 50.5).", "data_expired": "بيانات التقرير منتهية الصلاحية أو غير موجودة. يرجى البحث عن السهم مرة أخرى بإرسال رمزه.", "disclaimer_message": "\n<b>⚠️ تنويه مهم جداً! ⚠️</b>\n<b>لا نتحمل المسؤولية أمام الله عن أي خطأ في احتساب الشرعيه اجتهدنا قدر المستطاع في الحصول علي قواعد البيانات بدقة لكن تبقي انت المسؤول عن قرار استثمارك او تملكك للسهم</b>", "purification_not_allowed": "عذراً، لا يمكن حساب التطهير لسهم '{sym}' لأنه غير شرعي.", "purification_unavailable_for_calc": "عذراً، لا يمكن حساب التطهير لسهم '{sym}' لأنه غير متوفر.", "share_bot_button": "➡️ مشاركة البوت", "connection_error": "⚠️ تعذر الاتصال بخادم البيانات. يرجى المحاولة لاحقاً.", "not_authorized_admin": "غير مصرح لك باستخدام هذا الأمر.", "broadcast_text_usage": "الرجاء الرد على هذه الرسالة بالنص الذي تريد نشره.", "broadcast_photo_usage": "الرجاء الرد على هذه الرسالة بالصورة التي تريد نشرها.", "broadcast_video_usage": "الرجاء الرد على هذه الرسالة بالفيديو الذي تريد نشره.", "broadcast_started": "جاري بدء الإرسال إلى {count} مستخدم...", "broadcast_text_sent_summary": "تم إرسال الرسالة النصية بنجاح إلى {sent_count} مستخدم.\nفشل الإرسال إلى {failed_count} مستخدم.", "broadcast_media_sent_summary": "تم إرسال الميديا بنجاح إلى {sent_count} مستخدم.\nفشل الإرسال إلى {failed_count} مستخدم.", "no_media_found": "لم يتم العثور على صورة أو فيديو في رسالتك.", "no_text_found_for_broadcast": "لم يتم العثور على نص في رسالتك.", "command_start_desc": "ابدا البوت", "command_lang_desc": "غير اللغة", "command_help_desc": "عرض المساعدة", "command_broadcast_text_desc": "نشر رسالة نصية لجميع المستخدمين", "command_broadcast_photo_desc": "نشر صورة لجميع المستخدمين", "command_broadcast_video_desc": "نشر فيديو لجميع المستخدمين", "command_stats_desc": "عرض إحصائيات البوت (للمسؤول)", "market_cap_update_label": "آخر تحديث", },}
+MESSAGES = { "en": { "choose_lang": "Please choose your language:", "lang_set": "✅ Language set to English.\n\n👋 Hello {user_mention}! Send me a stock symbol (e.g. GOOG or AAPL).", "start": "👋 Hello {user_mention}! Send me a stock symbol (e.g. GOOG or AAPL).", "searching": "Searching for {sym}... ⏳", "not_found": "⚠️ The symbol '{sym}' is not supported.", "error": "❗ An unexpected error occurred while fetching data for '{sym}':\n{err}", "rate_limit": "Please wait {delta} seconds before trying again.", "help": ("/start – Start bot\n" "/lang  – Change language\n" "/help  – Show help\n\n" "Usage:\n" "1. First send /start and choose your language.\n" "2. Then send a stock symbol to get its full results.\n" "You don’t need to send /start again each time."), "header": "📈 Shariah status for {company} ({sym}):", "sector": "• Sector: {sec}", "subsector": "• Sub-sector: {sub}", "financial_report_header": "📊 Financial Report for {company} ({sym}):", "compliance_statuses": {"compliant": "Compliant ✅", "non_compliant": "Non-compliant ❌", "haram_activity": "Company Activity is Not Shariah-Compliant ❌", "unknown": "Unknown ❓"}, "not_available": "N/A", "report_date": "• Report Date: {date}", "purification_ratio_display": "• Purification Ratio: {ratio}", "purification_mixed_text": " (Mixed)", "show_financial_report_button": "📊 Show Financial Report", "calculate_purification_button": "🧮 Purification Calculator", "choose_profit_type": "Please choose the type of profit for {sym}:", "profit_type_capital_gains": "Capital Gains (Sale Profit)", "profit_type_dividends": "Dividends (Profit Distributions)", "enter_profit_amount": "Please enter the {profit_type} amount for {sym} (e.g., 1000 or 50.5):", "purification_result_capital_gains": ("For your capital gains of {amount} from {company} ({sym}), the amount to purify is: {purified_amount_usd:.2f} $\n" "This is equivalent to Saudi Riyals: {purified_amount_sar:.2f} SR\n\n" "You can pay the purification amount on Ehsan platform via this link: https://ehsan.sa/stockspurification"), "purification_result_dividends": ("For your dividends of {amount} from {company} ({sym}), the amount to purify is: {purified_amount_usd:.2f} $\n" "This is equivalent to Saudi Riyals: {purified_amount_sar:.2f} SR\n\n" "You can pay the purification amount on Ehsan platform via this link: https://ehsan.sa/stockspurification"), "invalid_amount": "Invalid amount. Please enter a numerical value (e.g., 1000 or 50.5).", "data_expired": "Purification/financial data for '{sym}' is not found or expired. Please search for the stock again by sending its symbol.", "purification_not_available": "Calculation is not available for '{sym}' as its purification ratio is not provided.", "command_start_desc": "Start bot / بدأ البوت", "command_lang_desc": "Change language / تغير اللغة", "command_help_desc": "Show help / عرض المساعدة", "command_broadcast_text_desc": "Broadcast text message to all users", "command_broadcast_photo_desc": "Broadcast photo to all users", "command_broadcast_video_desc": "Broadcast video to all users", "command_stats_desc": "Show bot statistics (Admin)", "disclaimer_message": "\n\n<b>⚠️ Important Disclaimer! ⚠️</b>\n<b>To disclaim responsibility before God for any error in Sharia calculation, we have strived as much as possible to obtain data accurately, but you remain solely responsible for your decision to invest or own the stock.</b>", "purification_not_allowed": "Sorry, calculation is not allowed for '{sym}' as it is not Shariah-compliant.", "purification_unavailable_for_calc": "Sorry, purification calculation is not available for '{sym}' as its data is not provided.", "share_bot_button": "➡️ Share Bot", "connection_error": "⚠️ Could not connect to data server. Please try again later.", "not_authorized_admin": "You are not authorized to use this command.", "broadcast_text_usage": "Please reply to this message with the text you want to broadcast.", "broadcast_photo_usage": "Please reply to this message with the photo you want to broadcast.", "broadcast_video_usage": "Please reply to this message with the video you want to broadcast.", "broadcast_started": "Starting broadcast to {count} users...", "broadcast_text_sent_summary": "Text broadcast sent successfully to {sent_count} users.\nFailed to send to {failed_count} users.", "broadcast_media_sent_summary": "Media broadcast sent successfully to {sent_count} users.\nFailed to send to {failed_count} users.", "no_media_found": "No photo or video found in your message.", "no_text_found_for_broadcast": "No text found in your message.", }, "ar": { "choose_lang": "اختر لغتك:", "lang_set": "✅ تم اختيار اللغة العربية.\n\n👋 أهلاً بك يا {user_mention}! أرسل رمز السهم (مثلاً GOOG أو AAPL).", "start": "👋 أهلاً بك يا {user_mention}! أرسل رمز السهم (مثلاً GOOG أو AAPL).", "searching": "جاري البحث عن {sym}... ⏳", "not_found": "⚠️ السهم '{sym}' غير مدعوم.", "error": "❗ حدث خطأ غير متوقع أثناء جلب البيانات للسهم '{sym}':\n{err}", "rate_limit": "يرجى الانتظار {delta} ثانية وإرسال طلبك مرة أخرى.", "help": ("/start – ابدأ البوت\n" "/lang  – غيّر اللغة\n" "/help  – عرض المساعدة\n\n" "طريقة الاستخدام:\n" "1. في المرة الأولى أرسل /start واختر اللغة.\n" "2. بعدها أرسل رمز السهم لتحصل على نتائجه كاملة.\n" "لا تحتاج لإعادة /start في كل مرة."), "header": "📈 شرعية سهم {company} ({sym}):", "sector": "• القطاع: {sec}", "subsector": "• القطاع الفرعي: {sub}", "financial_report_header": "📊 التقرير المالي لسهم {company} ({sym}):", "compliance_statuses": {"compliant": "شرعي ✅", "non_compliant": "غير شرعي ❌", "haram_activity": "نشاط الشركة غير شرعي ❌", "unknown": "غير محدد ❓"}, "not_available": "غير متوفر", "report_date": "• تاريخ التقرير: {date}", "purification_ratio_display": "• نسبة التطهير: {ratio}", "purification_mixed_text": " (مختلط)", "show_financial_report_button": "📊 عرض التقرير المالي", "calculate_purification_button": "🧮 حاسبة التطهير", "choose_profit_type": "الرجاء اختيار نوع الربح لسهم {sym}:", "profit_type_capital_gains": "أرباح بيع (أرباح رأسمالية)", "profit_type_dividends": "توزيعات أرباح", "enter_profit_amount": "الرجاء إدخال مبلغ {profit_type} لسهم {sym} (مثلاً 1000 أو 50.5):", "purification_result_capital_gains": ("لربحك الرأسمالي البالغ {amount} من سهم {company} ({sym})، المبلغ الواجب تطهيره هو: {purified_amount_usd:.2f} $\n" "وهذا يعادل بالريال السعودي: {purified_amount_sar:.2f} SR\n\n" "بالإمكان دفع قيمة التطهير على موقع إحسان من خلال الرابط: https://ehsan.sa/stockspurification"), "purification_result_dividends": ("لتوزيعات أرباحك البالغة {amount} من سهم {company} ({sym})، المبلغ الواجب تطهيره هو: {purified_amount_usd:.2f} $\n" "وهذا يعادل بالريال السعودي: {purified_amount_sar:.2f} SR\n\n" "بالإمكان دفع قيمة التطهير على موقع إحسان من خلال الرابط: https://ehsan.sa/stockspurification"), "invalid_amount": "مبلغ غير صالح. الرجاء إدخال قيمة رقمية (مثلاً 1000 أو 50.5).", "data_expired": "بيانات التقرير منتهية الصلاحية أو غير موجودة. يرجى البحث عن السهم مرة أخرى بإرسال رمزه.", "disclaimer_message": "\n<b>⚠️ تنويه مهم جداً! ⚠️</b>\n<b>لا نتحمل المسؤولية أمام الله عن أي خطأ في احتساب الشرعيه اجتهدنا قدر المستطاع في الحصول علي قواعد البيانات بدقة لكن تبقي انت المسؤول عن قرار استثمارك او تملكك للسهم</b>", "purification_not_allowed": "عذراً، لا يمكن حساب التطهير لسهم '{sym}' لأنه غير شرعي.", "purification_unavailable_for_calc": "عذراً، لا يمكن حساب التطهير لسهم '{sym}' لأنه غير متوفر.", "share_bot_button": "➡️ مشاركة البوت", "connection_error": "⚠️ تعذر الاتصال بخادم البيانات. يرجى المحاولة لاحقاً.", "not_authorized_admin": "غير مصرح لك باستخدام هذا الأمر.", "broadcast_text_usage": "الرجاء الرد على هذه الرسالة بالنص الذي تريد نشره.", "broadcast_photo_usage": "الرجاء الرد على هذه الرسالة بالصورة التي تريد نشرها.", "broadcast_video_usage": "الرجاء الرد على هذه الرسالة بالفيديو الذي تريد نشره.", "broadcast_started": "جاري بدء الإرسال إلى {count} مستخدم...", "broadcast_text_sent_summary": "تم إرسال الرسالة النصية بنجاح إلى {sent_count} مستخدم.\nفشل الإرسال إلى {failed_count} مستخدم.", "broadcast_media_sent_summary": "تم إرسال الميديا بنجاح إلى {sent_count} مستخدم.\nفشل الإرسال إلى {failed_count} مستخدم.", "no_media_found": "لم يتم العثور على صورة أو فيديو في رسالتك.", "no_text_found_for_broadcast": "لم يتم العثور على نص في رسالتك.", "command_start_desc": "ابدا البوت", "command_lang_desc": "غير اللغة", "command_help_desc": "عرض المساعدة", "command_broadcast_text_desc": "نشر رسالة نصية لجميع المستخدمين", "command_broadcast_photo_desc": "نشر صورة لجميع المستخدمين", "command_broadcast_video_desc": "نشر فيديو لجميع المستخدمين", "command_stats_desc": "عرض إحصائيات البوت (للمسؤول)", },}
 BANK_NAMES = { "بنك البلاد": {"en": "Bank Albilad", "ar": "بنك البلاد"}, "بنك الراجحي": {"en": "Al Rajhi Bank", "ar": "بنك الراجحي"},}
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
@@ -94,7 +94,11 @@ def _get_financial_value(dataframe, key, default=None):
             return default
     return default
 
+# --- *** دالة كشط الويب النهائية والمحسنة *** ---
 def fetch_interest_income_from_web(symbol):
+    """
+    تحاول هذه الدالة جلب الدخل من الفوائد من صفحة الويب كمصدر احتياطي.
+    """
     try:
         url = f"https://finance.yahoo.com/quote/{symbol}/financials"
         headers = {
@@ -102,68 +106,57 @@ def fetch_interest_income_from_web(symbol):
         }
         response = requests.get(url, headers=headers, timeout=10)
         response.raise_for_status()
+
         soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # قائمة بالأسماء المحتملة لبند الفائدة بالترتيب
         possible_labels = ['Net Interest Income', 'Interest Income']
+        
+        # البحث عن كل الصفوف التي تحمل عنواناً
         title_divs = soup.find_all('div', class_='Ta(c) Py(6px) Bxz(bb) BdB Bdc($seperatorColor) Miw(120px) Miw(140px)--pnclg D(tbc)')
+
         for title_div in title_divs:
             title_text = title_div.find('span').get_text(strip=True)
             if title_text in possible_labels:
+                # إذا وجدنا العنوان، نذهب إلى العنصر الشقيق له الذي يحتوي على الرقم
                 data_div = title_div.find_next_sibling('div', attrs={'data-test': 'fin-col'})
                 if data_div:
                     value_str = data_div.text.strip().replace(',', '')
                     if value_str and value_str != '-':
+                        # التعامل مع الأرقام السالبة بين قوسين
                         if value_str.startswith('(') and value_str.endswith(')'):
                             value_str = '-' + value_str[1:-1]
-                        return int(value_str) * 1000
-        return None
+                        return int(value_str) * 1000 # البيانات بالآلاف
+        return None # إذا لم يتم العثور على أي من الأسماء
     except Exception as e:
         logger.error(f"CRITICAL: Web scraping for {symbol} failed. Error: {e}")
         return None
 
-def fetch_yfinance(symbol: str, retries=3, delay=2):
-    """
-    Fetches stock data from yfinance with a retry mechanism to handle intermittent HTTP errors.
-    """
+# --- *** تم تعديل هذه الدالة لتضمين ميزة التحقق من نوع السهم *** ---
+def fetch_yfinance(symbol: str):
     ticker = None
     info = None
-    last_exception = None
+    try:
+        ticker = yf.Ticker(symbol)
+        info = ticker.info
+    except HTTPError as e:
+        if e.response.status_code == 404: raise ValueError("not_found")
+        logger.error(f"HTTPError fetching data for {symbol}: {e}"); raise ValueError(f"connection_error:{str(e)}")
+    except Exception as e:
+        logger.error(f"Unexpected error during yfinance fetch for {symbol}: {e}"); raise ValueError(f"error:{str(e)}")
 
-    for attempt in range(retries):
-        try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
-            # If data is present and complete, break the loop
-            if info and info.get("longName"):
-                logger.info(f"Successfully fetched data for {symbol} on attempt {attempt + 1}.")
-                break
-            else:
-                logger.warning(f"Attempt {attempt + 1}/{retries} for {symbol} returned incomplete data. Retrying in {delay}s...")
-                info = None # Ensure info is None to continue retrying
+    if not info or not info.get("longName") and not info.get("shortName"):
+        raise ValueError("not_found")
         
-        except HTTPError as e:
-            last_exception = e
-            if e.response.status_code == 404:
-                logger.error(f"HTTP 404 Not Found for {symbol}. Ticker does not exist.")
-                raise ValueError("not_found")
-            logger.error(f"HTTP Error on attempt {attempt + 1}/{retries} for {symbol}: {e}. Retrying...")
-        except Exception as e:
-            last_exception = e
-            logger.error(f"Unexpected error on attempt {attempt + 1}/{retries} for {symbol}: {e}. Retrying...")
-        
-        # Wait before the next attempt
-        time.sleep(delay)
-
-    # If all retries fail, raise an error
-    if not info:
-        error_message = f"error: Failed to fetch data for {symbol} after {retries} attempts. Last error: {last_exception}"
-        logger.critical(error_message)
-        raise ValueError(error_message)
-        
-    # --- The rest of the original function logic starts here ---
+    # --- بداية التعديل المطلوب ---
+    # التحقق من نوع الورقة المالية. الأسهم العادية نوعها 'EQUITY'
+    # الصناديق الاستثمارية وغيرها ليس لها نفس البيانات المالية.
     quote_type = info.get('quoteType')
+    # نرفض أي شيء ليس سهماً عادياً (EQUITY) أو إذا كان لا يحتوي على قطاع
     if quote_type != 'EQUITY' or not info.get('sector'):
         logger.info(f"Symbol {symbol} is of an unsupported type ('{quote_type}') or has no sector. Rejecting.")
         raise ValueError("not_found")
+    # --- نهاية التعديل المطلوب ---
 
     company_all = info.get("longName", info.get("shortName", symbol))
     sector = info.get("sector")
@@ -194,6 +187,7 @@ def fetch_yfinance(symbol: str, retries=3, delay=2):
                     found_in_api = True
                     break
             
+            # الخطة البديلة: كشط الويب إذا فشل الـ API
             if not found_in_api or interest_income is None:
                 logger.info(f"Interest income for {symbol} not in API, trying web scraping...")
                 scraped_interest = fetch_interest_income_from_web(symbol)
@@ -204,6 +198,7 @@ def fetch_yfinance(symbol: str, retries=3, delay=2):
     except Exception as e: 
         logger.warning(f"Error fetching quarterly financials for {symbol}: {e}")
     
+    # --- إضافة سجلات تتبع للبيانات قبل اتخاذ القرار ---
     logger.info(f"--- Data for {symbol} ---")
     logger.info(f"Total Revenue: {total_revenue}")
     logger.info(f"Interest Income: {interest_income}")
@@ -269,10 +264,9 @@ def fetch_yfinance(symbol: str, retries=3, delay=2):
     
     return company_all, sector, subsector, compliance_results, {"market_cap": market_cap, "total_revenue": total_revenue, "total_debt": total_debt, "interest_income": interest_income, "total_assets": total_assets, "purification_ratio": purification_ratio}, report_date, interest_income, total_revenue
 
-def _build_financial_report_text(lang, company, sym, metrics_data, report_date, interest_income, total_revenue, market_cap_update_time=None):
+def _build_financial_report_text(lang, company, sym, metrics_data, report_date, interest_income, total_revenue):
     parts = [MESSAGES[lang]["financial_report_header"].format(company=company, sym=sym)]
     financial_metrics_config = {"market_cap": {"ar": "القيمة السوقية", "en": "Market Cap"}, "total_revenue": {"ar": "مجموع الإيرادات", "en": "Total Revenue"}, "total_debt": {"ar": "إجمالي الديون", "en": "Total Debt"}, "interest_income": {"ar": "الدخل من الفوائد", "en": "Interest Income"}, "interest_income_ratio": {"ar": "الدخل من الفوائد/مجموع الإيرادات", "en": "Interest Income/Total Revenue"}, "total_debt_market_cap_ratio": {"ar": "مجموع الديون/القيمة السوقية", "en": "Total Debt/Market Cap"}, "total_assets": {"ar": "إجمالي الأصول", "en": "Total Assets"}, "debt_to_assets_ratio": {"ar": "نسبة الدين إلى الأصل", "en": "Debt to Assets Ratio"}}
-    
     def get_formatted_value(key, value, lang):
         if key == "interest_income_ratio":
             if interest_income is not None and total_revenue is not None and not (isinstance(interest_income, float) and math.isnan(interest_income)) and not (isinstance(total_revenue, float) and math.isnan(total_revenue)) and total_revenue > 0: return f"{abs(interest_income)/total_revenue:.2%}"
@@ -284,15 +278,9 @@ def _build_financial_report_text(lang, company, sym, metrics_data, report_date, 
             if metrics_data.get("total_debt") is not None and metrics_data.get("total_assets", 0) > 0: return f"{metrics_data['total_debt']/metrics_data['total_assets']:.2%}"
             return MESSAGES[lang]["not_available"]
         else: return nice(value, lang)
-        
     for key, names in financial_metrics_config.items():
         parts.append(f"• {names[lang]}: {get_formatted_value(key, metrics_data.get(key), lang)}")
-        
     parts.append(MESSAGES[lang]["report_date"].format(date=report_date))
-    
-    if market_cap_update_time:
-        parts.append(f"• {MESSAGES[lang]['market_cap_update_label']}: {market_cap_update_time}")
-        
     return "\n".join(parts)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -303,19 +291,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         kb = [[InlineKeyboardButton("English", callback_data="lang:en"), InlineKeyboardButton("العربية", callback_data="lang:ar")]]
         await update.message.reply_text(MESSAGES["en"]["choose_lang"], reply_markup=InlineKeyboardMarkup(kb))
     else: await update.message.reply_html(MESSAGES[lang]["start"].format(user_mention=user.mention_html()))
-
 async def lang_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = db.get_user_setting(update.effective_chat.id, 'language', 'ar')
     kb = [[InlineKeyboardButton("English", callback_data="lang:en"), InlineKeyboardButton("العربية", callback_data="lang:ar")]]
     await update.message.reply_text(MESSAGES[lang]["choose_lang"], reply_markup=InlineKeyboardMarkup(kb))
-
 async def on_lang_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
     _, code = q.data.split(":")
     db.set_user_setting(q.from_user.id, 'language', code)
     await q.edit_message_text(MESSAGES[code]["lang_set"].format(user_mention=q.from_user.mention_html()), parse_mode=ParseMode.HTML)
-
 async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = db.get_user_setting(update.effective_chat.id, 'language', 'ar')
     await update.message.reply_text(MESSAGES[lang]["help"], parse_mode=ParseMode.HTML)
@@ -437,9 +422,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not stock_data:
             stock_data = fetch_yfinance(sym)
             db.cache_stock(sym, stock_data)
-        
         db.log_search(cid, sym)
-        
         company_all, sector, subsector, compliance_results, metrics_data, report_date, interest_income, total_revenue = stock_data
         match_company_name = re.search(r"[\u0600-\u06FFA-Za-z].*$", company_all)
         company = match_company_name.group(0) if match_company_name else company_all
@@ -455,24 +438,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parts_shariah.append(MESSAGES[lang]["purification_ratio_display"].format(ratio=pur_text))
         parts_shariah.append(MESSAGES[lang]["disclaimer_message"])
         keyboard = [[InlineKeyboardButton(MESSAGES[lang]["show_financial_report_button"], callback_data=f"show_report:{sym}"), InlineKeyboardButton(MESSAGES[lang]["calculate_purification_button"], callback_data=f"calc_purify:{sym}")], [InlineKeyboardButton(MESSAGES[lang]["share_bot_button"], url=f"https://t.me/share/url?url=https://t.me/{context.bot.username}")]]
-        
-        db.set_report_data(
-            cid,
-            sym,
-            {
-                "lang": lang,
-                "company": company,
-                "sym": sym,
-                "metrics_data": metrics_data,
-                "report_date": report_date,
-                "interest_income": interest_income,
-                "total_revenue": total_revenue,
-                "purification_ratio_for_calc": pur_val,
-                "actual_compliance_statuses": actual_compliance_statuses,
-                "market_cap_update_time": time.strftime('%Y-%m-%d')
-            }
-        )
-        
+        db.set_report_data(cid, sym, {"lang": lang, "company": company, "sym": sym, "metrics_data": metrics_data, "report_date": report_date, "interest_income": interest_income, "total_revenue": total_revenue, "purification_ratio_for_calc": pur_val, "actual_compliance_statuses": actual_compliance_statuses})
         await temp_message.delete()
         await update.message.reply_text("\n".join(parts_shariah), parse_mode=ParseMode.HTML, reply_markup=InlineKeyboardMarkup(keyboard))
     except ValueError as e:
@@ -489,25 +455,9 @@ async def show_financial_report(update: Update, context: ContextTypes.DEFAULT_TY
     cid, sym = q.from_user.id, q.data.split(":")[-1]
     report_data = db.get_report_data(cid, sym)
     if report_data:
-        lang = report_data["lang"]
-        company = report_data["company"]
-        metrics_data = report_data["metrics_data"]
-        report_date = report_data["report_date"]
-        interest_income = report_data["interest_income"]
-        total_revenue = report_data["total_revenue"]
-        market_cap_update_time = report_data.get("market_cap_update_time")
-
-        await q.message.reply_text(
-            _build_financial_report_text(
-                lang, company, sym, metrics_data, report_date, interest_income, total_revenue, market_cap_update_time
-            ),
-            parse_mode=ParseMode.HTML
-        )
-    else:
-
-        lang_code = db.get_user_setting(cid, 'language', 'ar')
-        await q.message.reply_text(MESSAGES[lang_code]["data_expired"].format(sym=sym), parse_mode=ParseMode.HTML)
-
+        lang, company, metrics_data, report_date, interest_income, total_revenue = report_data["lang"], report_data["company"], report_data["metrics_data"], report_data["report_date"], report_data["interest_income"], report_data["total_revenue"]
+        await q.message.reply_text(_build_financial_report_text(lang, company, sym, metrics_data, report_date, interest_income, total_revenue), parse_mode=ParseMode.HTML)
+    else: await q.message.reply_text(MESSAGES[db.get_user_setting(cid, 'language', 'ar')]["data_expired"].format(sym=sym), parse_mode=ParseMode.HTML)
 
 async def calculate_purification_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()

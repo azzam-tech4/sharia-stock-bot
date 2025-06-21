@@ -412,7 +412,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not stock_data:
             stock_data = fetch_yfinance(sym)
             db.cache_stock(sym, stock_data)
+        
         db.log_search(cid, sym)
+        
         company_all, sector, subsector, compliance_results, metrics_data, report_date, interest_income, total_revenue = stock_data
         match_company_name = re.search(r"[\u0600-\u06FFA-Za-z].*$", company_all)
         company = match_company_name.group(0) if match_company_name else company_all

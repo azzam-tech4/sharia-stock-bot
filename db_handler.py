@@ -8,8 +8,8 @@ import os
 logger = logging.getLogger(__name__)
 
 # --- *** تم تعديل هذا الجزء ليتوافق مع أي سيرفر *** ---
-# سيستخدم المسار المحدد في متغير البيئة DATA_PATH، وإذا لم يكن موجوداً، سيستخدم المجلد الحالي
-DATA_PATH = os.environ.get('DATA_PATH', '.') 
+# المسار '/var/data' هو المسار الافتراضي للأقراص الدائمة في Render
+DATA_PATH = os.environ.get('DATA_PATH', '/var/data')
 DB_FILE = os.path.join(DATA_PATH, "sharia_stock_bot.db")
 
 # التأكد من وجود المجلد قبل إنشاء الاتصال

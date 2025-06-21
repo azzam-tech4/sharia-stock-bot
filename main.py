@@ -136,15 +136,13 @@ def fetch_yfinance(symbol: str):
         raise ValueError("not_found")
         
     quote_type = info.get('quoteType')
-    # تعديل هنا: السماح إذا كان النوع EQUITY حتى لو لم يوجد sector
-    if quote_type != 'EQUITY':
-        logger.info(f"Symbol {symbol} is of an unsupported type ('{quote_type}'). Rejecting.")
+    if quote_type != 'EQUITY' or not info.get('sector'):
+        logger.info(f"Symbol {symbol} is of an unsupported type ('{quote_type}') or has no sector. Rejecting.")
         raise ValueError("not_found")
 
     company_all = info.get("longName", info.get("shortName", symbol))
-    # إذا لم يوجد sector أو industry، ضع قيمة افتراضية
-    sector = info.get("sector", "N/A")
-    subsector = info.get("industry", "N/A")
+    sector = info.get("sector")
+    subsector = info.get("industry")
     haram = is_haram_activity(sector, subsector)
     
     market_cap = info.get("marketCap")

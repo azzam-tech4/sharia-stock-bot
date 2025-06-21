@@ -30,7 +30,6 @@ import pandas as pd
 # --- مكتبات جديدة لكشط الويب ---
 import requests
 from bs4 import BeautifulSoup
-import random # <-- إضافة جديدة
 
 # --- استيراد المكونات الجديدة ---
 import db_handler as db
@@ -121,52 +120,17 @@ def fetch_interest_income_from_web(symbol):
         logger.error(f"CRITICAL: Web scraping for {symbol} failed. Error: {e}")
         return None
 
-# --- *** بداية الجزء الذي تم تعديله *** ---
 def fetch_yfinance(symbol: str):
     ticker = None
     info = None
-
-    # استخدام جلسة (Session) مع User-Agent متغير لتجنب الحظر
-    user_agent_list = [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/109.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36'
-    ]
-    user_agent = random.choice(user_agent_list)
-    session = requests.Session()
-    session.headers.update({'User-Agent': user_agent})
-
-    # منطق المحاولات المتكررة للتعامل مع أخطاء الشبكة المؤقتة
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            logger.info(f"Attempt {attempt + 1}/{max_retries} to fetch data for {symbol}")
-            
-            # تمرير الجلسة (session) إلى yfinance
-            ticker = yf.Ticker(symbol, session=session)
-            
-            info = ticker.info
-            
-            # إذا نجحنا في الحصول على البيانات، نخرج من الحلقة
-            if info and (info.get("longName") or info.get("shortName")):
-                break 
-            
-            # إذا لم تنجح ولكن بدون خطأ، انتظر قليلاً قبل المحاولة التالية
-            logger.warning(f"Attempt {attempt + 1} resulted in empty info. Retrying...")
-            time.sleep(2)
-
-        except Exception as e:
-            # التحقق من وجود الخطأ 401 في نص الخطأ
-            if "HTTPError: 401" in str(e) or "401 Client Error" in str(e):
-                 logger.error(f"Attempt {attempt + 1} failed with 401 Unauthorized. Yahoo may be blocking requests. Retrying...")
-            else:
-                logger.warning(f"Attempt {attempt + 1} failed with an error: {e}. Retrying...")
-            
-            # نزيد فترة الانتظار قليلاً في حالة الحظر
-            time.sleep(3)
-    
-    # --- نهاية الجزء الذي تم تعديله ---
+    try:
+        ticker = yf.Ticker(symbol)
+        info = ticker.info
+    except HTTPError as e:
+        if e.response.status_code == 404: raise ValueError("not_found")
+        logger.error(f"HTTPError fetching data for {symbol}: {e}"); raise ValueError(f"connection_error:{str(e)}")
+    except Exception as e:
+        logger.error(f"Unexpected error during yfinance fetch for {symbol}: {e}"); raise ValueError(f"error:{str(e)}")
 
     if not info or not info.get("longName") and not info.get("shortName"):
         raise ValueError("not_found")
@@ -189,9 +153,8 @@ def fetch_yfinance(symbol: str):
     
     try:
         if ticker:
-            # استخدام نفس الجلسة لجلب البيانات الإضافية لضمان التوافق
-            qf = ticker.get_financials(proxy=session.proxies, timeout=30)
-            qbs = ticker.get_balance_sheet(proxy=session.proxies, timeout=30)
+            qf = ticker.quarterly_financials
+            qbs = ticker.quarterly_balance_sheet
             
             total_revenue = _get_financial_value(qf, "Total Revenue", total_revenue)
             total_debt = _get_financial_value(qbs, "Total Debt", total_debt)
@@ -228,6 +191,7 @@ def fetch_yfinance(symbol: str):
     if interest_income is not None and total_revenue is not None and not (isinstance(interest_income, float) and math.isnan(interest_income)) and not (isinstance(total_revenue, float) and math.isnan(total_revenue)) and total_revenue > 0:
         purification_ratio = (abs(interest_income) / total_revenue) * 100
 
+    # --- *** بداية الجزء الذي تم تعديله *** ---
     def get_compliance_status(bank_name):
         try:
             if haram: 
@@ -262,22 +226,28 @@ def fetch_yfinance(symbol: str):
                 else:
                     debt_check_result = False
             
+            # --- المنطق الجديد للتحقق ---
+            # نقوم بجمع الشروط التي تمكنا من التحقق منها فقط (التي ليست None)
             valid_checks = []
             if rev_check_result is not None:
                 valid_checks.append(rev_check_result)
             if debt_check_result is not None:
                 valid_checks.append(debt_check_result)
 
+            # إذا لم نتمكن من التحقق من أي شرط، فالحالة غير محددة
             if not valid_checks:
                 return "unknown"
 
+            # إذا كان أي شرط من الشروط التي تم التحقق منها خاطئاً، فالسهم غير متوافق
             if False in valid_checks:
                 return "non_compliant"
             
+            # إذا وصلنا إلى هنا، فهذا يعني أن كل الشروط التي تم التحقق منها صحيحة
             return "compliant"
 
         except (TypeError, ZeroDivisionError):
             return "unknown"
+    # --- *** نهاية الجزء الذي تم تعديله *** ---
 
     bilad_status = get_compliance_status("Al-Bilad")
     rajhi_status = get_compliance_status("Al-Rajhi")

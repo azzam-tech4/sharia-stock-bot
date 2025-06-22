@@ -547,6 +547,38 @@ async def on_startup(app: ApplicationBuilder):
             await app.bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_id=admin_id))
             logger.info(f"Set admin commands for chat ID: {admin_id}")
         except Exception as e: logger.error(f"Failed to set admin commands for {admin_id}: {e}")
+async def reset_stats_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    أمر خاص بالمدير لإعادة تعيين إحصائيات البحث والكاش.
+    يحذف جميع محتويات جداول: searches, stock_cache, report_cache, user_states.
+    ويبقي على جدول users كما هو.
+    """
+    cid = update.effective_chat.id
+    lang = db.get_user_setting(cid, 'language', 'ar')
+
+    # التحقق إذا كان المستخدم هو المدير
+    if cid not in ADMIN_CHAT_IDS:
+        await update.message.reply_text(MESSAGES[lang]["not_authorized_admin"])
+        return
+
+    try:
+        # استدعاء دالة الحذف الجديدة من ملف قاعدة البيانات
+        deleted_counts = db.reset_statistics()
+
+        # بناء رسالة التأكيد
+        response_message = "✅ تم إعادة تعيين الإحصائيات بنجاح.\n\n"
+        response_message += f"• عدد سجلات البحث المحذوفة: {deleted_counts['searches']}\n"
+        response_message += f"• عدد الأسهم المخزنة مؤقتاً التي تم حذفها: {deleted_counts['stock_cache']}\n"
+        response_message += f"• عدد التقارير المخزنة مؤقتاً التي تم حذفها: {deleted_counts['report_cache']}\n"
+        response_message += f"• عدد حالات المستخدمين المؤقتة التي تم حذفها: {deleted_counts['user_states']}\n\n"
+        response_message += "⚠️ قائمة المستخدمين لم تتأثر."
+
+        await update.message.reply_text(response_message)
+        logger.info(f"Admin user {cid} has reset the bot statistics.")
+
+    except Exception as e:
+        await update.message.reply_text(f"حدث خطأ أثناء إعادة التعيين: {e}")
+        logger.error(f"Error during stats reset by admin {cid}: {e}")
 
 def main():
     logger.info("Initializing database...")
@@ -560,6 +592,16 @@ def main():
     app.add_handler(CallbackQueryHandler(show_financial_report, pattern="^show_report:"))
     app.add_handler(CallbackQueryHandler(calculate_purification_callback, pattern="^calc_purify:"))
     app.add_handler(CallbackQueryHandler(handle_profit_type_selection, pattern="^profit_type:"))
+        # ... كل الأوامر الحالية ...
+    app.add_handler(CommandHandler("start", start)); app.add_handler(CommandHandler("lang", lang_cmd)); app.add_handler(CommandHandler("help", help_cmd)); app.add_handler(CommandHandler("stats", stats_cmd))
+    app.add_handler(CommandHandler("broadcast_text", broadcast_text)); app.add_handler(CommandHandler("broadcast_photo", broadcast_photo)); app.add_handler(CommandHandler("broadcast_video", broadcast_video))
+
+    # <<< أضف هذا السطر هنا >>>
+    app.add_handler(CommandHandler("resetstats", reset_stats_command))
+
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)); app.add_handler(MessageHandler((filters.PHOTO | filters.VIDEO) & ~filters.COMMAND, handle_message))
+    # ... بقية الأوامر ...
+
     logger.info("Bot is running...")
     app.run_polling()
     if db.conn: db.conn.close(); logger.info("Database connection closed.")

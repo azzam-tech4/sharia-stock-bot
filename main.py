@@ -285,6 +285,9 @@ def _build_financial_report_text(lang, company, sym, metrics_data, report_date, 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
+        # --- بداية التعديل: مسح أي حالة سابقة للمستخدم ---
+    db.clear_user_state(user.id)
+    # --- نهاية التعديل ---
     db.add_user_if_not_exists(user.id, user.first_name, user.username)
     lang = db.get_user_setting(user.id, 'language')
     if not lang:

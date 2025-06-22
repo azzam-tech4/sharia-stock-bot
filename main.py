@@ -312,7 +312,7 @@ async def help_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(MESSAGES[lang]["help"], parse_mode=ParseMode.HTML)
 
 def create_stats_image(stats: dict) -> BytesIO:
-    plt.rcParams['font.family'] = 'Arial'
+    plt.rcParams['font.family'] = 'DejaVu Sans'
     def ar(text): return get_display(arabic_reshaper.reshape(str(text)))
     
     fig = plt.figure(figsize=(8, 13), dpi=150)

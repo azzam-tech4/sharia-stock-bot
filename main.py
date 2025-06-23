@@ -597,26 +597,32 @@ def main():
     db.initialize_database()
     logger.info("Database initialization complete.")
     app = (ApplicationBuilder().token(TELEGRAM_TOKEN).arbitrary_callback_data(True).post_init(on_startup).build())
-    app.add_handler(CommandHandler("start", start)); app.add_handler(CommandHandler("lang", lang_cmd)); app.add_handler(CommandHandler("help", help_cmd)); app.add_handler(CommandHandler("stats", stats_cmd))
-    app.add_handler(CommandHandler("broadcast_text", broadcast_text)); app.add_handler(CommandHandler("broadcast_photo", broadcast_photo)); app.add_handler(CommandHandler("broadcast_video", broadcast_video))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)); app.add_handler(MessageHandler((filters.PHOTO | filters.VIDEO) & ~filters.COMMAND, handle_message))
+
+    # إضافة جميع معالجات الأوامر
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("lang", lang_cmd))
+    app.add_handler(CommandHandler("help", help_cmd))
+    app.add_handler(CommandHandler("stats", stats_cmd))
+    app.add_handler(CommandHandler("broadcast_text", broadcast_text))
+    app.add_handler(CommandHandler("broadcast_photo", broadcast_photo))
+    app.add_handler(CommandHandler("broadcast_video", broadcast_video))
+
+    # إضافة أمر إعادة التعيين الجديد
+    app.add_handler(CommandHandler("resetalldata", reset_all_data_command))
+
+    # إضافة بقية المعالجات
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(MessageHandler((filters.PHOTO | filters.VIDEO) & ~filters.COMMAND, handle_message))
     app.add_handler(CallbackQueryHandler(on_lang_button, pattern="^lang:"))
     app.add_handler(CallbackQueryHandler(show_financial_report, pattern="^show_report:"))
     app.add_handler(CallbackQueryHandler(calculate_purification_callback, pattern="^calc_purify:"))
     app.add_handler(CallbackQueryHandler(handle_profit_type_selection, pattern="^profit_type:"))
-    def main():
-    # ... كل الأوامر الحالية ...
-    app.add_handler(CommandHandler("start", start))
-    # ... إلخ ...
-
-    # <<< أضف هذا السطر هنا >>>
-    app.add_handler(CommandHandler("resetalldata", reset_all_data_command))
-
-    # ... بقية الأوامر ...
 
     logger.info("Bot is running...")
     app.run_polling()
-    if db.conn: db.conn.close(); logger.info("Database connection closed.")
+    if db.conn:
+        db.conn.close()
+        logger.info("Database connection closed.")
 
 if __name__ == "__main__":
     main()

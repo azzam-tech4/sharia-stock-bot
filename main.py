@@ -561,6 +561,36 @@ async def on_startup(app: ApplicationBuilder):
             await app.bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_id=admin_id))
             logger.info(f"Set admin commands for chat ID: {admin_id}")
         except Exception as e: logger.error(f"Failed to set admin commands for {admin_id}: {e}")
+async def reset_all_data_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    أمر خاص بالمدير لإعادة تعيين جميع بيانات البوت ما عدا المستخدمين.
+    """
+    cid = update.effective_chat.id
+    lang = db.get_user_setting(cid, 'language', 'ar')
+
+    # التحقق إذا كان المستخدم هو المدير
+    if cid not in ADMIN_CHAT_IDS:
+        await update.message.reply_text(MESSAGES[lang]["not_authorized_admin"])
+        return
+
+    try:
+        # استدعاء دالة الحذف الجديدة من ملف قاعدة البيانات
+        deleted_counts = db.reset_all_bot_data()
+
+        # بناء رسالة التأكيد
+        response_message = "✅ تمت إعادة تعيين بيانات البوت بنجاح.\n\n"
+        response_message += f"• عدد سجلات البحث المحذوفة: {deleted_counts.get('searches', 0)}\n"
+        response_message += f"• عدد الأسهم المخزنة مؤقتاً التي تم حذفها: {deleted_counts.get('stock_cache', 0)}\n"
+        response_message += f"• عدد التقارير المخزنة مؤقتاً التي تم حذفها: {deleted_counts.get('report_cache', 0)}\n"
+        response_message += f"• عدد حالات المستخدمين المؤقتة التي تم حذفها: {deleted_counts.get('user_states', 0)}\n\n"
+        response_message += "⚠️ **قائمة المستخدمين لم تتأثر.**"
+
+        await update.message.reply_text(response_message)
+        logger.info(f"Admin user {cid} has reset all bot data (except users).")
+
+    except Exception as e:
+        await update.message.reply_text(f"حدث خطأ أثناء إعادة التعيين: {e}")
+        logger.error(f"Error during full data reset by admin {cid}: {e}")
 
 def main():
     logger.info("Initializing database...")
@@ -574,6 +604,16 @@ def main():
     app.add_handler(CallbackQueryHandler(show_financial_report, pattern="^show_report:"))
     app.add_handler(CallbackQueryHandler(calculate_purification_callback, pattern="^calc_purify:"))
     app.add_handler(CallbackQueryHandler(handle_profit_type_selection, pattern="^profit_type:"))
+    def main():
+    # ... كل الأوامر الحالية ...
+    app.add_handler(CommandHandler("start", start))
+    # ... إلخ ...
+
+    # <<< أضف هذا السطر هنا >>>
+    app.add_handler(CommandHandler("resetalldata", reset_all_data_command))
+
+    # ... بقية الأوامر ...
+
     logger.info("Bot is running...")
     app.run_polling()
     if db.conn: db.conn.close(); logger.info("Database connection closed.")

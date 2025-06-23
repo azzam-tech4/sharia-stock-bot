@@ -201,28 +201,3 @@ def get_bot_stats() -> dict:
         stats['top_stocks_day'] = cursor.execute(base_query.format("date(search_time) = date('now')")).fetchall()
     except sqlite3.Error as e: logger.error(f"Error getting bot stats: {e}")
     return stats
-def reset_all_bot_data():
-    """
-    تحذف جميع البيانات من الجداول المتعلقة بالإحصائيات والكاش والحالات المؤقتة.
-    ((لا تحذف جدول المستخدمين users))
-    """
-    tables_to_clear = ["searches", "stock_cache", "report_cache", "user_states"]
-    deleted_counts = {}
-
-    for table in tables_to_clear:
-        try:
-            # حساب عدد السجلات قبل الحذف
-            cursor.execute(f"SELECT COUNT(*) FROM {table}")
-            count = cursor.fetchone()[0]
-            deleted_counts[table] = count
-
-            # تنفيذ أمر الحذف
-            cursor.execute(f"DELETE FROM {table}")
-            logger.info(f"Cleared all {count} records from table: {table}")
-
-        except sqlite3.Error as e:
-            logger.error(f"Error clearing table {table}: {e}")
-            deleted_counts[table] = f"Error: {e}"
-
-    conn.commit()
-    return deleted_counts

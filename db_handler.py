@@ -32,7 +32,7 @@ def initialize_database():
         logger.info(f"Database current version: {current_version}")
         if current_version < 1:
             logger.info("Migrating database to version 1...")
-            cursor.execute('''CREATE TABLE IF NOT EXISTS users (chat_id INTEGER PRIMARY KEY, language TEXT DEFAULT 'ar', last_request_time REAL DEFAULT 0, join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+            cursor.execute('''CREATE TABLE IF NOT EXISTS users (chat_id INTEGER PRIMARY KEY, language TEXT, last_request_time REAL DEFAULT 0, join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
             try: cursor.execute("ALTER TABLE users ADD COLUMN first_name TEXT")
             except sqlite3.OperationalError: logger.warning("Column 'first_name' already exists in 'users'.")
             try: cursor.execute("ALTER TABLE users ADD COLUMN username TEXT")

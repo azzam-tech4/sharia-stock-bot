@@ -32,7 +32,8 @@ def initialize_database():
         logger.info(f"Database current version: {current_version}")
         if current_version < 1:
             logger.info("Migrating database to version 1...")
-            cursor.execute('''CREATE TABLE IF NOT EXISTS users (chat_id INTEGER PRIMARY KEY, language TEXT DEFAULT 'ar', last_request_time REAL DEFAULT 0, join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
+            # --- *** تم التعديل هنا لحذف القيمة الافتراضية للغة *** ---
+            cursor.execute('''CREATE TABLE IF NOT EXISTS users (chat_id INTEGER PRIMARY KEY, language TEXT, last_request_time REAL DEFAULT 0, join_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
             try: cursor.execute("ALTER TABLE users ADD COLUMN first_name TEXT")
             except sqlite3.OperationalError: logger.warning("Column 'first_name' already exists in 'users'.")
             try: cursor.execute("ALTER TABLE users ADD COLUMN username TEXT")
@@ -55,12 +56,23 @@ def _clean_for_json(data):
     if isinstance(data, float) and math.isnan(data): return None
     return data
 
-def add_user_if_not_exists(chat_id: int, first_name: str, username: str):
+# --- *** بداية التعديل على دالة add_user_if_not_exists *** ---
+def add_user_if_not_exists(chat_id: int, first_name: str, username: str) -> bool:
+    """Returns True if a new user was created, False otherwise."""
     try:
         cursor.execute("INSERT OR IGNORE INTO users (chat_id, first_name, username) VALUES (?, ?, ?)", (chat_id, first_name, username))
-        cursor.execute("UPDATE users SET first_name = ?, username = ? WHERE chat_id = ?", (first_name, username, chat_id))
+        is_new_user = cursor.rowcount > 0  # .rowcount تكون 1 إذا تمت إضافة صف جديد، و 0 إذا لم يحدث شيء
+        
+        # نقوم بتحديث بيانات المستخدم القديم فقط إذا لم يكن جديداً
+        if not is_new_user:
+            cursor.execute("UPDATE users SET first_name = ?, username = ? WHERE chat_id = ?", (first_name, username, chat_id))
+        
         conn.commit()
-    except sqlite3.Error as e: logger.error(f"Error adding/updating user {chat_id}: {e}")
+        return is_new_user
+    except sqlite3.Error as e: 
+        logger.error(f"Error adding/updating user {chat_id}: {e}")
+        return False
+# --- *** نهاية التعديل على دالة add_user_if_not_exists *** ---
 
 def remove_user(chat_id: int):
     try:

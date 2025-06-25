@@ -291,18 +291,22 @@ def _build_financial_report_text(lang, company, sym, metrics_data, report_date, 
 
     return "\n".join(parts)
 
-
+# --- *** بداية التعديل على دالة start *** ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    db.add_user_if_not_exists(user.id, user.first_name, user.username)
-    lang = db.get_user_setting(user.id, 'language')
-
-    if not lang:
+    # الدالة الآن تخبرنا إذا كان المستخدم جديداً أم لا
+    is_new_user = db.add_user_if_not_exists(user.id, user.first_name, user.username)
+    
+    if is_new_user:
+        # هذا مستخدم جديد تماماً، نعرض له فقط أزرار اختيار اللغة
         kb = [[InlineKeyboardButton("English", callback_data="lang:en"), InlineKeyboardButton("العربية", callback_data="lang:ar")]]
         await update.message.reply_text(MESSAGES["en"]["choose_lang"], reply_markup=InlineKeyboardMarkup(kb))
     else:
+        # هذا مستخدم قديم، نرحب به بلغته المحفوظة
+        lang = db.get_user_setting(user.id, 'language', 'ar') # 'ar' كقيمة افتراضية احتياطية
         db.clear_user_state(user.id)
         await update.message.reply_html(MESSAGES[lang]["start"].format(user_mention=user.mention_html()))
+# --- *** نهاية التعديل على دالة start *** ---
 
 async def lang_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = db.get_user_setting(update.effective_chat.id, 'language', 'ar')
@@ -413,22 +417,23 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Failed to generate stats image: {e}")
         await update.message.reply_text("حدث خطأ أثناء إنشاء صورة الإحصائيات. يرجى مراجعة السجلات.")
 
+# --- *** بداية التعديل على دالة handle_message *** ---
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cid, user = update.effective_chat.id, update.effective_user
     db.add_user_if_not_exists(cid, user.first_name, user.username)
     lang = db.get_user_setting(cid, 'language')
 
     if not lang:
-        kb = [[InlineKeyboardButton("English", callback_data="lang:en"), InlineKeyboardButton("العربية", callback_data="lang:ar")]]
-        await update.message.reply_text(MESSAGES["en"]["choose_lang"], reply_markup=InlineKeyboardMarkup(kb))
-        return
+        # المستخدم لم يختر لغة بعد. سنجعل العربية هي اللغة الافتراضية.
+        lang = 'ar'
+        db.set_user_setting(cid, 'language', 'ar')
+        logger.info(f"User {cid} has not set a language. Defaulting to 'ar'.")
+        # الأهم: لا يوجد 'return'، ليكمل الكود ويعالج رمز السهم
 
     user_state = db.get_user_state(cid)
-
     if cid in ADMIN_CHAT_IDS and user_state and "broadcast" in user_state.get("state", ""):
         # Broadcast logic handling...
         return
-
     if user_state and user_state.get("state") == "waiting_for_profit_amount":
         user_msg_text = update.message.text.strip() if update.message.text else ""
         try:
@@ -517,6 +522,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await temp_message.delete(); logger.error(f"Unexpected error for {sym}: {e}")
         await update.message.reply_text(MESSAGES[lang]["error"].format(sym=sym, err=str(e)), parse_mode=ParseMode.HTML)
+# --- *** نهاية التعديل على دالة handle_message *** ---
+
 
 async def show_financial_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()

@@ -1,6 +1,6 @@
 python-telegram-bot[ext]
 deep-translator
-yfinance
+yfinance>=0.2.40
 python-dotenv
 matplotlib
 arabic_reshaper

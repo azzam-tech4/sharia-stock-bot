@@ -23,16 +23,17 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
+# --- *** تمت إضافة هذه المكتبات *** ---
+from telegram.error import RetryAfter
+import asyncio
+# --- نهاية الإضافة ---
 import yfinance as yf
 import math
-import asyncio
 import pandas as pd
-# --- مكتبات جديدة لكشط الويب ---
 import requests
 from bs4 import BeautifulSoup
 import random
 
-# --- استيراد المكونات الجديدة ---
 import db_handler as db
 import matplotlib
 matplotlib.use('Agg')
@@ -40,7 +41,7 @@ import matplotlib.pyplot as plt
 import arabic_reshaper
 from bidi.algorithm import get_display
 
-# --- الثوابت والقواميس ---
+# --- الثوابت والقواميس (بدون تغيير) ---
 SECTOR_MANUAL_TRANSLATE = { "Internet Content & Information": "محتوى الإنترنت والمعلومات", "Financial Services": "الخدمات المالية", "Asset Management": "إدارة الأصول", "Insurance - Life": "تأمين على الحياة", "Tobacco": "التبغ", "Banks": "البنوك", "Alcohol": "الخمور", "Gambling": "المقامرة", "Pork": "لحوم الخنزير", "Consumer Defensive": "الدفاع الاستهلاكي", "Semiconductors": "أشباه الموصلات", "Software - Infrastructure": "البرمجيات - البنية التحتية", "Software - Application": "البرمجيات - التطبيقات", "Biotechnology": "التكنولوجيا الحيوية", "Pharmaceuticals": "المستحضرات الصيدلانية", "Beverages - Brewers": "المشروبات - البيرة", "Resorts & Casinos": "المنتجعات والكازينوهات", "Entertainment": "ترفيه", "Beverages - Non-Alcoholic": "المشروبات - غير الكحولية",}
 TRANSLATION_CACHE = {}
 ADMIN_CHAT_IDS = [7567496609, 649684756]
@@ -63,6 +64,7 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 RATE_LIMIT_SECONDS = 5
 CACHE_TTL = 3600
 
+# --- باقي الدوال (بدون تغيير) ---
 def manual_or_translate(text, lang_to):
     if not text or not isinstance(text, str): return text
     key = text.strip()
@@ -291,22 +293,17 @@ def _build_financial_report_text(lang, company, sym, metrics_data, report_date, 
 
     return "\n".join(parts)
 
-# --- *** بداية التعديل على دالة start *** ---
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    # الدالة الآن تخبرنا إذا كان المستخدم جديداً أم لا
     is_new_user = db.add_user_if_not_exists(user.id, user.first_name, user.username)
     
     if is_new_user:
-        # هذا مستخدم جديد تماماً، نعرض له فقط أزرار اختيار اللغة
         kb = [[InlineKeyboardButton("English", callback_data="lang:en"), InlineKeyboardButton("العربية", callback_data="lang:ar")]]
         await update.message.reply_text(MESSAGES["en"]["choose_lang"], reply_markup=InlineKeyboardMarkup(kb))
     else:
-        # هذا مستخدم قديم، نرحب به بلغته المحفوظة
-        lang = db.get_user_setting(user.id, 'language', 'ar') # 'ar' كقيمة افتراضية احتياطية
+        lang = db.get_user_setting(user.id, 'language', 'ar')
         db.clear_user_state(user.id)
         await update.message.reply_html(MESSAGES[lang]["start"].format(user_mention=user.mention_html()))
-# --- *** نهاية التعديل على دالة start *** ---
 
 async def lang_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = db.get_user_setting(update.effective_chat.id, 'language', 'ar')
@@ -338,15 +335,12 @@ def create_stats_image(stats: dict) -> BytesIO:
 
     def draw_table_at(y_pos, height, ax_x, ax_width, title, data, col_labels, col_widths):
         fig.text(ax_x + ax_width / 2, y_pos, ar(title), ha='center', va='bottom', fontsize=15, weight='bold')
-
         ax = fig.add_axes([ax_x, y_pos - height, ax_width, height])
         ax.axis('off')
-
         table = ax.table(cellText=data, colLabels=col_labels, colWidths=col_widths, cellLoc='center', loc='center')
         table.auto_set_font_size(False)
         table.set_fontsize(11)
         table.scale(1, 1.9)
-
         for key, cell in table.get_celld().items():
             cell.set_edgecolor('w')
             if key[0] == 0 and col_labels:
@@ -357,26 +351,8 @@ def create_stats_image(stats: dict) -> BytesIO:
                 cell.set_text_props(ha='right' if key[1] == 1 else 'center')
         return height + 0.05
 
-    user_data = [
-        [ar(stats['total_users']), ar("الإجمالي")],
-        [ar(stats['active_users_today']), ar("النشطون (اليوم)")],
-        [ar(stats['active_users_week']), ar("النشطون (أسبوع)")],
-        [ar(stats['active_users_month']), ar("النشطون (شهر)")],
-        [ar(stats['new_users_today']), ar("الجدد (اليوم)")],
-        [ar(stats['new_users_week']), ar("الجدد (أسبوع)")],
-        [ar(stats['new_users_month']), ar("الجدد (شهر)")],
-    ]
-    search_data = [
-        [ar(stats['total_searches']), ar("الإجمالي")],
-        [ar(stats['searches_today']), ar("اليوم")],
-        [ar(stats['searches_yesterday']), ar("أمس")],
-        [ar(stats['searches_this_week']), ar("هذا الأسبوع")],
-        [ar(stats['searches_last_week']), ar("الأسبوع الماضي")],
-        [ar(stats['searches_this_month']), ar("هذا الشهر")],
-        [ar(stats['searches_last_month']), ar("الشهر الماضي")],
-        [ar(stats['searches_this_year']), ar("العام الحالي")],
-        [ar(stats['searches_last_year']), ar("العام الماضي")],
-    ]
+    user_data = [[ar(stats['total_users']), ar("الإجمالي")], [ar(stats['active_users_today']), ar("النشطون (اليوم)")], [ar(stats['active_users_week']), ar("النشطون (أسبوع)")], [ar(stats['active_users_month']), ar("النشطون (شهر)")], [ar(stats['new_users_today']), ar("الجدد (اليوم)")], [ar(stats['new_users_week']), ar("الجدد (أسبوع)")], [ar(stats['new_users_month']), ar("الجدد (شهر)")],]
+    search_data = [[ar(stats['total_searches']), ar("الإجمالي")], [ar(stats['searches_today']), ar("اليوم")], [ar(stats['searches_yesterday']), ar("أمس")], [ar(stats['searches_this_week']), ar("هذا الأسبوع")], [ar(stats['searches_last_week']), ar("الأسبوع الماضي")], [ar(stats['searches_this_month']), ar("هذا الشهر")], [ar(stats['searches_last_month']), ar("الشهر الماضي")], [ar(stats['searches_this_year']), ar("العام الحالي")], [ar(stats['searches_last_year']), ar("العام الماضي")],]
     lang_data = [[ar(count), ar("العربية" if lang == 'ar' else "English")] for lang, count in stats['language_distribution'].items()] or [[ar(0), ar("لا يوجد")]]
 
     def format_stock_data(stock_list):
@@ -386,14 +362,11 @@ def create_stats_image(stats: dict) -> BytesIO:
     h = draw_table_at(current_y, 0.22, 0.05, 0.4, "👤 المستخدمون", user_data, None, [0.4, 0.6])
     draw_table_at(current_y, 0.28, 0.55, 0.4, "🔍 عمليات البحث", search_data, None, [0.4, 0.6])
     current_y -= (max(h, 0.28 + 0.05))
-
     h = draw_table_at(current_y, 0.1, 0.1, 0.8, "🌐 توزيع اللغات", lang_data, [ar("العدد"), ar("اللغة")], [0.4, 0.6])
     current_y -= h
-
     h = draw_table_at(current_y, 0.15, 0.05, 0.4, "⭐ الأكثر بحثاً (اليوم)", format_stock_data(stats['top_stocks_day']), [ar("العدد"), ar("الرمز")], [0.4, 0.6])
     draw_table_at(current_y, 0.15, 0.55, 0.4, "⭐ الأكثر بحثاً (الأسبوع)", format_stock_data(stats['top_stocks_week']), [ar("العدد"), ar("الرمز")], [0.4, 0.6])
     current_y -= h
-
     h = draw_table_at(current_y, 0.15, 0.05, 0.4, "⭐ الأكثر بحثاً (الشهر)", format_stock_data(stats['top_stocks_month']), [ar("العدد"), ar("الرمز")], [0.4, 0.6])
     draw_table_at(current_y, 0.15, 0.55, 0.4, "⭐ الأكثر بحثاً (الإجمالي)", format_stock_data(stats['top_stocks_overall']), [ar("العدد"), ar("الرمز")], [0.4, 0.6])
 
@@ -417,23 +390,69 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Failed to generate stats image: {e}")
         await update.message.reply_text("حدث خطأ أثناء إنشاء صورة الإحصائيات. يرجى مراجعة السجلات.")
 
-# --- *** بداية التعديل على دالة handle_message *** ---
+# --- *** بداية التعديل الكبير على دالة handle_message *** ---
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cid, user = update.effective_chat.id, update.effective_user
     db.add_user_if_not_exists(cid, user.first_name, user.username)
     lang = db.get_user_setting(cid, 'language')
 
     if not lang:
-        # المستخدم لم يختر لغة بعد. سنجعل العربية هي اللغة الافتراضية.
         lang = 'ar'
         db.set_user_setting(cid, 'language', 'ar')
         logger.info(f"User {cid} has not set a language. Defaulting to 'ar'.")
-        # الأهم: لا يوجد 'return'، ليكمل الكود ويعالج رمز السهم
 
     user_state = db.get_user_state(cid)
+    # --- *** بداية منطق البث الجماعي الآمن *** ---
     if cid in ADMIN_CHAT_IDS and user_state and "broadcast" in user_state.get("state", ""):
-        # Broadcast logic handling...
-        return
+        
+        state_to_process = user_state.get("state")
+        db.clear_user_state(cid) # إلغاء حالة البث لتجنب الإرسال المكرر
+
+        all_user_ids = db.get_all_user_chat_ids()
+        if not all_user_ids:
+            await update.message.reply_text("لا يوجد مستخدمون لإرسال البث لهم.")
+            return
+
+        await update.message.reply_text(MESSAGES[lang]["broadcast_started"].format(count=len(all_user_ids)))
+
+        sent_count = 0
+        failed_count = 0
+        
+        text_to_send = update.message.text or update.message.caption
+        photo_to_send = update.message.photo[-1].file_id if update.message.photo else None
+        video_to_send = update.message.video.file_id if update.message.video else None
+
+        for user_id in all_user_ids:
+            try:
+                if state_to_process == "waiting_for_broadcast_text":
+                    if not text_to_send: continue
+                    await context.bot.send_message(chat_id=user_id, text=text_to_send)
+                elif state_to_process == "waiting_for_broadcast_photo":
+                    if not photo_to_send: continue
+                    await context.bot.send_photo(chat_id=user_id, photo=photo_to_send, caption=text_to_send)
+                elif state_to_process == "waiting_for_broadcast_video":
+                    if not video_to_send: continue
+                    await context.bot.send_video(chat_id=user_id, video=video_to_send, caption=text_to_send)
+                
+                sent_count += 1
+
+            except RetryAfter as e:
+                logger.warning(f"Flood control exceeded. Waiting for {e.retry_after} seconds.")
+                await asyncio.sleep(e.retry_after + 1)
+                failed_count += 1
+            except Exception as e:
+                logger.warning(f"Failed to send broadcast to {user_id}: {e}")
+                failed_count += 1
+            
+            await asyncio.sleep(0.04) # تأخير أساسي بمقدار 0.04 ثانية بين كل رسالة
+
+        summary_message_key = "broadcast_text_sent_summary" if "text" in state_to_process else "broadcast_media_sent_summary"
+        await update.message.reply_text(
+            MESSAGES[lang][summary_message_key].format(sent_count=sent_count, failed_count=failed_count)
+        )
+        return # مهم: إنهاء الدالة بعد معالجة البث
+    # --- *** نهاية منطق البث الجماعي الآمن *** ---
+
     if user_state and user_state.get("state") == "waiting_for_profit_amount":
         user_msg_text = update.message.text.strip() if update.message.text else ""
         try:
@@ -555,15 +574,11 @@ async def calculate_purification_callback(update: Update, context: ContextTypes.
     report_data = db.get_report_data(cid, sym)
     if report_data:
         lang, purification_ratio, actual_compliance_statuses = report_data["lang"], report_data["purification_ratio_for_calc"], report_data.get("actual_compliance_statuses", [])
-
         is_compliant_somewhere = "compliant" in actual_compliance_statuses
-
         if not is_compliant_somewhere:
             await q.message.reply_text(MESSAGES[lang]["purification_not_allowed"].format(sym=sym), parse_mode=ParseMode.HTML); return
-
         if purification_ratio is None or math.isnan(purification_ratio):
             await q.message.reply_text(MESSAGES[lang]["purification_unavailable_for_calc"].format(sym=sym), parse_mode=ParseMode.HTML); return
-
         db.set_user_state(cid, {"state": "waiting_for_profit_type", "sym": sym, "company": report_data["company"], "purification_ratio": purification_ratio})
         keyboard = [[InlineKeyboardButton(MESSAGES[lang]["profit_type_capital_gains"], callback_data=f"profit_type:capital_gains:{sym}")], [InlineKeyboardButton(MESSAGES[lang]["profit_type_dividends"], callback_data=f"profit_type:dividends:{sym}")]]
         await q.message.reply_text(MESSAGES[lang]["choose_profit_type"].format(sym=sym), reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)

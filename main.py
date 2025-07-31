@@ -23,10 +23,8 @@ from telegram.ext import (
     ContextTypes,
     filters,
 )
-# --- *** تمت إضافة هذه المكتبات *** ---
 from telegram.error import RetryAfter
 import asyncio
-# --- نهاية الإضافة ---
 import yfinance as yf
 import math
 import pandas as pd
@@ -53,7 +51,7 @@ def is_haram_activity(sector, subsector):
         if word.lower() in text: return True
     return False
 SAR_EXCHANGE_RATE = 3.75
-MESSAGES = { "en": { "choose_lang": "Please choose your language:", "lang_set": "✅ Language set to English.\n\n👋 Hello {user_mention}! Send me a stock symbol (e.g. Nvda or Tsla).", "start": "👋 Hello {user_mention}! Send me a stock symbol (e.g. Nvda or Tsla).", "searching": "Searching for {sym}... ⏳", "not_found": "⚠️ The symbol '{sym}' is not supported.", "error": "❗ An unexpected error occurred while fetching data for '{sym}':\n{err}", "rate_limit": "Please wait {delta} seconds before trying again.", "help": ("/start – Start bot\n" "/lang  – Change language\n" "/help  – Show help\n\n" "Usage:\n" "1. First send /start and choose your language.\n" "2. Then send a stock symbol to get its full results.\n" "You don’t need to send /start again each time."), "header": "📈 Shariah status for {company} ({sym}):", "sector": "• Sector: {sec}", "subsector": "• Sub-sector: {sub}", "financial_report_header": "📊 Financial Report for {company} ({sym}):", "compliance_statuses": {"compliant": "Sharia-compliant ✅", "non_compliant": "Not Sharia-compliant ❌", "haram_activity": "Activity is not Sharia-compliant ❌", "unknown": "Unknown ❓"}, "not_available": "Currently unknown", "report_date": "• Report Date: {date}", "purification_ratio_display": "• Purification Ratio: {ratio}", "purification_mixed_text": " (Mixed)", "purification_pure_text": " (Pure)", "show_financial_report_button": "📊 Show Financial Report", "calculate_purification_button": "🧮 Purification Calculator", "choose_profit_type": "Please choose the type of profit for {sym}:", "profit_type_capital_gains": "Capital Gains (Sale Profit)", "profit_type_dividends": "Dividends (Profit Distributions)", "enter_profit_amount": "Please enter the {profit_type} amount for {sym} (e.g., 1000 or 50.5):", "purification_result_capital_gains": ("For your capital gains of {amount} from {company} ({sym}), the amount to purify is: {purified_amount_usd:.2f} $\n" "This is equivalent to Saudi Riyals: {purified_amount_sar:.2f} SR\n\n" "You can pay the purification amount on Ehsan platform via this link: https://ehsan.sa/stockspurification"), "purification_result_dividends": ("For your dividends of {amount} from {company} ({sym}), the amount to purify is: {purified_amount_usd:.2f} $\n" "This is equivalent to Saudi Riyals: {purified_amount_sar:.2f} SR\n\n" "You can pay the purification amount on Ehsan platform via this link: https://ehsan.sa/stockspurification"), "invalid_amount": "Invalid amount. Please enter a numerical value (e.g., 1000 or 50.5).", "data_expired": "Purification/financial data for '{sym}' is not found or expired. Please search for the stock again by sending its symbol.", "purification_not_available": "Calculation is not available for '{sym}' as its purification ratio is not provided.", "command_start_desc": "Start bot / بدأ البوت", "command_lang_desc": "Change language / تغير اللغة", "command_help_desc": "Show help / عرض المساعدة", "command_broadcast_text_desc": "Broadcast text message to all users", "command_broadcast_photo_desc": "Broadcast photo to all users", "command_broadcast_video_desc": "Broadcast video to all users", "command_stats_desc": "Show bot statistics (Admin)", "disclaimer_message": "\n\n<b>⚠️ Important Notice ⚠️</b>\n<b>We absolve ourselves before God from any error in calculating legality. We have made every effort to compile and update the databases, but the responsibility for your investment or speculative decision remains solely yours.</b>", "purification_not_allowed": "Sorry, calculation is not allowed for '{sym}' as it is not Shariah-compliant.", "purification_unavailable_for_calc": "Sorry, the purge for '{sym}' stock cannot be calculated because it is currently unknown.", "share_bot_button": "➡️ Share Bot", "connection_error": "⚠️ Could not connect to data server. Please try again later.", "not_authorized_admin": "You are not authorized to use this command.", "broadcast_text_usage": "Please reply to this message with the text you want to broadcast.", "broadcast_photo_usage": "Please reply to this message with the photo you want to broadcast.", "broadcast_video_usage": "Please reply to this message with the video you want to broadcast.", "broadcast_started": "Starting broadcast to {count} users...", "broadcast_text_sent_summary": "Text broadcast sent successfully to {sent_count} users.\nFailed to send to {failed_count} users.", "broadcast_media_sent_summary": "Media broadcast sent successfully to {sent_count} users.\nFailed to send to {failed_count} users.", "no_media_found": "No photo or video found in your message.", "no_text_found_for_broadcast": "No text found in your message.", "market_cap_update_label": "Last Updated", }, "ar": { "choose_lang": "اختر لغتك:", "lang_set": "✅ تم اختيار اللغة العربية.\n\n👋 أهلاً بك يا {user_mention}! أرسل رمز السهم (مثلاً Nvda أو Tsla).", "start": "👋 أهلاً بك يا {user_mention}! أرسل رمز السهم (مثلاً Nvda أو Tsla).", "searching": "جاري البحث عن {sym}... ⏳", "not_found": "⚠️ السهم '{sym}' غير مدعوم.", "error": "❗ حدث خطأ غير متوقع أثناء جلب البيانات للسهم '{sym}':\n{err}", "rate_limit": "يرجى الانتظار {delta} ثانية وإرسال طلبك مرة أخرى.", "help": ("/start – ابدأ البوت\n" "/lang  – غيّر اللغة\n" "/help  – عرض المساعدة\n\n" "طريقة الاستخدام:\n" "1. في المرة الأولى أرسل /start واختر اللغة.\n" "2. بعدها أرسل رمز السهم لتحصل على نتائجه كاملة.\n" "لا تحتاج لإعادة /start في كل مرة."), "header": "📈 شرعية سهم {company} ({sym}):", "sector": "• القطاع: {sec}", "subsector": "• القطاع الفرعي: {sub}", "financial_report_header": "📊 التقرير المالي لسهم {company} ({sym}):", "compliance_statuses": {"compliant": "متوافق مع الضوابط الشرعية ✅", "non_compliant": "غير متوافق مع الضوابط الشرعية ❌", "haram_activity": "نشاط الشركة غير شرعي ❌", "unknown": "غير محدد ❓"}, "not_available": "غير معروف حالياً", "report_date": "• تاريخ التقرير: {date}", "purification_ratio_display": "• نسبة التطهير: {ratio}", "purification_mixed_text": " (مختلط)", "purification_pure_text": " (نقي)", "show_financial_report_button": "📊 عرض التقرير المالي", "calculate_purification_button": "🧮 حاسبة التطهير", "choose_profit_type": "الرجاء اختيار نوع الربح لسهم {sym}:", "profit_type_capital_gains": "أرباح بيع (أرباح رأسمالية)", "profit_type_dividends": "توزيعات أرباح", "enter_profit_amount": "الرجاء إدخال مبلغ {profit_type} لسهم {sym} (مثلاً 1000 أو 50.5):", "purification_result_capital_gains": ("لربحك الرأسمالي البالغ {amount} من سهم {company} ({sym})، المبلغ الواجب تطهيره هو: {purified_amount_usd:.2f} $\n" "وهذا يعادل بالريال السعودي: {purified_amount_sar:.2f} SR\n\n" "بالإمكان دفع قيمة التطهير على موقع إحسان من خلال الرابط: https://ehsan.sa/stockspurification"), "purification_result_dividends": ("لتوزيعات أرباحك البالغة {amount} من سهم {company} ({sym})، المبلغ الواجب تطهيره هو: {purified_amount_usd:.2f} $\n" "وهذا يعادل بالريال السعودي: {purified_amount_sar:.2f} SR\n\n" "بالإمكان دفع قيمة التطهير على موقع إحسان من خلال الرابط: https://ehsan.sa/stockspurification"), "invalid_amount": "مبلغ غير صالح. الرجاء إدخال قيمة رقمية (مثلاً 1000 أو 50.5).", "data_expired": "بيانات التقرير منتهية الصلاحية أو غير موجودة. يرجى البحث عن السهم مرة أخرى بإرسال رمزه.", "disclaimer_message": "\n<b>⚠️ تنويه مهم ⚠️</b>\n<b>نُبرئ ذمّتنا ومسؤوليتنا أمام الله من أي خطأ في احتساب الشرعية. بذلنا جهدنا في جمع وتحديث قواعد البيانات، لكن تبقى مسؤولية القرار الاستثماري أو المضاربي عليك وحدك .</b>", "purification_not_allowed": "عذراً، لا يمكن حساب التطهير لسهم '{sym}' لأنه غير شرعي.", "purification_unavailable_for_calc": "عذراً، لا يمكن حساب التطهير لسهم '{sym}' لأنه غير معروف حالياً.", "share_bot_button": "➡️ مشاركة البوت", "connection_error": "⚠️ تعذر الاتصال بخادم البيانات. يرجى المحاولة لاحقاً.", "not_authorized_admin": "غير مصرح لك باستخدام هذا الأمر.", "broadcast_text_usage": "الرجاء الرد على هذه الرسالة بالنص الذي تريد نشره.", "broadcast_photo_usage": "الرجاء الرد على هذه الرسالة بالصورة التي تريد نشرها.", "broadcast_video_usage": "الرجاء الرد على هذه الرسالة بالفيديو الذي تريد نشره.", "broadcast_started": "جاري بدء الإرسال إلى {count} مستخدم...", "broadcast_text_sent_summary": "تم إرسال الرسالة النصية بنجاح إلى {sent_count} مستخدم.\nفشل الإرسال إلى {failed_count} مستخدم.", "broadcast_media_sent_summary": "تم إرسال الميديا بنجاح إلى {sent_count} مستخدم.\nفشل الإرسال إلى {failed_count} مستخدم.", "no_media_found": "لم يتم العثور على صورة أو فيديو في رسالتك.", "no_text_found_for_broadcast": "لم يتم العثور على نص في رسالتك.", "command_start_desc": "ابدا البوت", "command_lang_desc": "غير اللغة", "command_help_desc": "عرض المساعدة", "command_broadcast_text_desc": "نشر رسالة نصية لجميع المستخدمين", "command_broadcast_photo_desc": "نشر صورة لجميع المستخدمين", "command_broadcast_video_desc": "نشر فيديو لجميع المستخدمين", "command_stats_desc": "عرض إحصائيات البوت (للمسؤول)", "market_cap_update_label": "آخر تحديث", },
+MESSAGES = { "en": { "choose_lang": "Please choose your language:", "lang_set": "✅ Language set to English.\n\n👋 Hello {user_mention}! Send me a stock symbol (e.g. Nvda or Tsla).", "start": "👋 Hello {user_mention}! Send me a stock symbol (e.g. Nvda or Tsla).", "searching": "Searching for {sym}... ⏳", "not_found": "⚠️ The symbol '{sym}' is not supported.", "error": "❗ An unexpected error occurred while fetching data for '{sym}':\n{err}", "rate_limit": "Please wait {delta} seconds before trying again.", "help": ("/start – Start bot\n" "/lang  – Change language\n" "/help  – Show help\n\n" "Usage:\n" "1. First send /start and choose your language.\n" "2. Then send a stock symbol to get its full results.\n" "You don’t need to send /start again each time."), "header": "📈 Shariah status for {company} ({sym}):", "sector": "• Sector: {sec}", "subsector": "• Sub-sector: {sub}", "financial_report_header": "📊 Financial Report for {company} ({sym}):", "compliance_statuses": {"compliant": "Sharia-compliant ✅", "non_compliant": "Not Sharia-compliant ❌", "haram_activity": "Activity is not Sharia-compliant ❌", "unknown": "Unknown ❓"}, "not_available": "Currently unknown", "report_date": "• Report Date: {date}", "purification_ratio_display": "• Purification Ratio: {ratio}", "purification_mixed_text": " (Mixed)", "purification_pure_text": " (Pure)", "show_financial_report_button": "📊 Show Financial Report", "calculate_purification_button": "🧮 Purification Calculator", "choose_profit_type": "Please choose the type of profit for {sym}:", "profit_type_capital_gains": "Capital Gains (Sale Profit)", "profit_type_dividends": "Dividends (Profit Distributions)", "enter_profit_amount": "Please enter the {profit_type} amount for {sym} (e.g., 1000 or 50.5):", "purification_result_capital_gains": ("For your capital gains of {amount} from {company} ({sym}), the amount to purify is: {purified_amount_usd:.2f} $\n" "This is equivalent to Saudi Riyals: {purified_amount_sar:.2f} SR\n\n" "You can pay the purification amount on Ehsan platform via this link: https://ehsan.sa/stockspurification"), "purification_result_dividends": ("For your dividends of {amount} from {company} ({sym}), the amount to purify is: {purified_amount_usd:.2f} $\n" "This is equivalent to Saudi Riyals: {purified_amount_sar:.2f} SR\n\n" "You can pay the purification amount on Ehsan platform via this link: https://ehsan.sa/stockspurification"), "invalid_amount": "Invalid amount. Please enter a numerical value (e.g., 1000 or 50.5).", "data_expired": "Purification/financial data for '{sym}' is not found or expired. Please search for the stock again by sending its symbol.", "purification_not_available": "Calculation is not available for '{sym}' as its purification ratio is not provided.", "command_start_desc": "Start bot / بدأ البوت", "command_lang_desc": "Change language / تغير اللغة", "command_help_desc": "Show help / عرض المساعدة", "command_broadcast_text_desc": "Broadcast text message to all users", "command_broadcast_photo_desc": "Broadcast photo to all users", "command_broadcast_video_desc": "Broadcast video to all users", "command_stats_desc": "Show bot statistics (Admin)", "disclaimer_message": "\n\n<b>⚠️ Important Notice ⚠️</b>\n<b>We absolve ourselves before God from any error in calculating legality. We have made every effort to compile and update the databases, but the responsibility for your investment or speculative decision remains solely yours.</b>", "purification_not_allowed": "Sorry, calculation is not allowed for '{sym}' as it is not Shariah-compliant.", "purification_unavailable_for_calc": "Sorry, the purge for '{sym}' stock cannot be calculated because it is currently unknown.", "share_bot_button": "➡️ Share Bot", "connection_error": "⚠️ Could not connect to data server. Please try again later.", "not_authorized_admin": "You are not authorized to use this command.", "broadcast_text_usage": "Please reply to this message with the text you want to broadcast.", "broadcast_photo_usage": "Please reply to this message with the photo you want to broadcast.", "broadcast_video_usage": "Please reply to this message with the video you want to broadcast.", "broadcast_started": "✅ Broadcast request received. Messages will be sent in the background. You can continue using the bot normally.", "broadcast_text_sent_summary": "Text broadcast finished.\n✅ Sent successfully to {sent_count} users.\n❌ Failed to send to {failed_count} users.", "broadcast_media_sent_summary": "Media broadcast finished.\n✅ Sent successfully to {sent_count} users.\n❌ Failed to send to {failed_count} users.", "no_media_found": "No photo or video found in your message.", "no_text_found_for_broadcast": "No text found in your message.", "market_cap_update_label": "Last Updated", }, "ar": { "choose_lang": "اختر لغتك:", "lang_set": "✅ تم اختيار اللغة العربية.\n\n👋 أهلاً بك يا {user_mention}! أرسل رمز السهم (مثلاً Nvda أو Tsla).", "start": "👋 أهلاً بك يا {user_mention}! أرسل رمز السهم (مثلاً Nvda أو Tsla).", "searching": "جاري البحث عن {sym}... ⏳", "not_found": "⚠️ السهم '{sym}' غير مدعوم.", "error": "❗ حدث خطأ غير متوقع أثناء جلب البيانات للسهم '{sym}':\n{err}", "rate_limit": "يرجى الانتظار {delta} ثانية وإرسال طلبك مرة أخرى.", "help": ("/start – ابدأ البوت\n" "/lang  – غيّر اللغة\n" "/help  – عرض المساعدة\n\n" "طريقة الاستخدام:\n" "1. في المرة الأولى أرسل /start واختر اللغة.\n" "2. بعدها أرسل رمز السهم لتحصل على نتائجه كاملة.\n" "لا تحتاج لإعادة /start في كل مرة."), "header": "📈 شرعية سهم {company} ({sym}):", "sector": "• القطاع: {sec}", "subsector": "• القطاع الفرعي: {sub}", "financial_report_header": "📊 التقرير المالي لسهم {company} ({sym}):", "compliance_statuses": {"compliant": "متوافق مع الضوابط الشرعية ✅", "non_compliant": "غير متوافق مع الضوابط الشرعية ❌", "haram_activity": "نشاط الشركة غير شرعي ❌", "unknown": "غير محدد ❓"}, "not_available": "غير معروف حالياً", "report_date": "• تاريخ التقرير: {date}", "purification_ratio_display": "• نسبة التطهير: {ratio}", "purification_mixed_text": " (مختلط)", "purification_pure_text": " (نقي)", "show_financial_report_button": "📊 عرض التقرير المالي", "calculate_purification_button": "🧮 حاسبة التطهير", "choose_profit_type": "الرجاء اختيار نوع الربح لسهم {sym}:", "profit_type_capital_gains": "أرباح بيع (أرباح رأسمالية)", "profit_type_dividends": "توزيعات أرباح", "enter_profit_amount": "الرجاء إدخال مبلغ {profit_type} لسهم {sym} (مثلاً 1000 أو 50.5):", "purification_result_capital_gains": ("لربحك الرأسمالي البالغ {amount} من سهم {company} ({sym})، المبلغ الواجب تطهيره هو: {purified_amount_usd:.2f} $\n" "وهذا يعادل بالريال السعودي: {purified_amount_sar:.2f} SR\n\n" "بالإمكان دفع قيمة التطهير على موقع إحسان من خلال الرابط: https://ehsan.sa/stockspurification"), "purification_result_dividends": ("لتوزيعات أرباحك البالغة {amount} من سهم {company} ({sym})، المبلغ الواجب تطهيره هو: {purified_amount_usd:.2f} $\n" "وهذا يعادل بالريال السعودي: {purified_amount_sar:.2f} SR\n\n" "بالإمكان دفع قيمة التطهير على موقع إحسان من خلال الرابط: https://ehsan.sa/stockspurification"), "invalid_amount": "مبلغ غير صالح. الرجاء إدخال قيمة رقمية (مثلاً 1000 أو 50.5).", "data_expired": "بيانات التقرير منتهية الصلاحية أو غير موجودة. يرجى البحث عن السهم مرة أخرى بإرسال رمزه.", "disclaimer_message": "\n<b>⚠️ تنويه مهم ⚠️</b>\n<b>نُبرئ ذمّتنا ومسؤوليتنا أمام الله من أي خطأ في احتساب الشرعية. بذلنا جهدنا في جمع وتحديث قواعد البيانات، لكن تبقى مسؤولية القرار الاستثماري أو المضاربي عليك وحدك .</b>", "purification_not_allowed": "عذراً، لا يمكن حساب التطهير لسهم '{sym}' لأنه غير شرعي.", "purification_unavailable_for_calc": "عذراً، لا يمكن حساب التطهير لسهم '{sym}' لأنه غير معروف حالياً.", "share_bot_button": "➡️ مشاركة البوت", "connection_error": "⚠️ تعذر الاتصال بخادم البيانات. يرجى المحاولة لاحقاً.", "not_authorized_admin": "غير مصرح لك باستخدام هذا الأمر.", "broadcast_text_usage": "الرجاء الرد على هذه الرسالة بالنص الذي تريد نشره.", "broadcast_photo_usage": "الرجاء الرد على هذه الرسالة بالصورة التي تريد نشرها.", "broadcast_video_usage": "الرجاء الرد على هذه الرسالة بالفيديو الذي تريد نشرها.", "broadcast_started": "✅ تم استلام طلب البث، سيتم إرسال الرسائل في الخلفية. يمكنك الآن متابعة استخدام البوت بشكل طبيعي.", "broadcast_text_sent_summary": "انتهى البث النصي.\n✅ تم الإرسال بنجاح إلى {sent_count} مستخدم.\n❌ فشل الإرسال إلى {failed_count} مستخدم.", "broadcast_media_sent_summary": "انتهى بث الميديا.\n✅ تم الإرسال بنجاح إلى {sent_count} مستخدم.\n❌ فشل الإرسال إلى {failed_count} مستخدم.", "no_media_found": "لم يتم العثور على صورة أو فيديو في رسالتك.", "no_text_found_for_broadcast": "لم يتم العثور على نص في رسالتك.", "command_start_desc": "ابدا البوت", "command_lang_desc": "غير اللغة", "command_help_desc": "عرض المساعدة", "command_broadcast_text_desc": "نشر رسالة نصية لجميع المستخدمين", "command_broadcast_photo_desc": "نشر صورة لجميع المستخدمين", "command_broadcast_video_desc": "نشر فيديو لجميع المستخدمين", "command_stats_desc": "عرض إحصائيات البوت (للمسؤول)", "market_cap_update_label": "آخر تحديث", },
 }
 BANK_NAMES = { "بنك البلاد": {"en": "Bank Albilad", "ar": "بنك البلاد"}, "بنك الراجحي": {"en": "Al Rajhi Bank", "ar": "بنك الراجحي"},}
 
@@ -390,7 +388,68 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Failed to generate stats image: {e}")
         await update.message.reply_text("حدث خطأ أثناء إنشاء صورة الإحصائيات. يرجى مراجعة السجلات.")
 
-# --- *** بداية التعديل الكبير على دالة handle_message *** ---
+# --- *** بداية التعديل: دالة جديدة لتنفيذ البث في الخلفية *** ---
+async def execute_broadcast(context: ContextTypes.DEFAULT_TYPE, admin_chat_id: int, message_to_broadcast: Update.message, lang: str, state_to_process: str):
+    """
+    هذه الدالة تقوم بتنفيذ عملية البث في الخلفية بشكل مستقل.
+    """
+    logger.info(f"Starting background broadcast task for admin {admin_chat_id}...")
+    
+    # استخراج المحتوى من رسالة المشرف
+    text_to_send = message_to_broadcast.text or message_to_broadcast.caption
+    photo_to_send = message_to_broadcast.photo[-1].file_id if message_to_broadcast.photo else None
+    video_to_send = message_to_broadcast.video.file_id if message_to_broadcast.video else None
+    
+    # جلب المستخدمين من قاعدة البيانات
+    all_user_ids = db.get_all_user_chat_ids()
+    if not all_user_ids:
+        await context.bot.send_message(chat_id=admin_chat_id, text="لا يوجد مستخدمون لإرسال البث لهم.")
+        return
+
+    sent_count = 0
+    failed_count = 0
+
+    # حلقة الإرسال لجميع المستخدمين
+    for user_id in all_user_ids:
+        try:
+            if state_to_process == "waiting_for_broadcast_text":
+                if not text_to_send: continue
+                await context.bot.send_message(chat_id=user_id, text=text_to_send)
+            elif state_to_process == "waiting_for_broadcast_photo":
+                if not photo_to_send: continue
+                await context.bot.send_photo(chat_id=user_id, photo=photo_to_send, caption=text_to_send)
+            elif state_to_process == "waiting_for_broadcast_video":
+                if not video_to_send: continue
+                await context.bot.send_video(chat_id=user_id, video=video_to_send, caption=text_to_send)
+            
+            sent_count += 1
+        except RetryAfter as e:
+            logger.warning(f"Flood control exceeded. Waiting for {e.retry_after} seconds.")
+            await asyncio.sleep(e.retry_after + 1)
+            # نعيد محاولة الإرسال لنفس المستخدم بعد الانتظار
+            try:
+                if state_to_process == "waiting_for_broadcast_text": await context.bot.send_message(chat_id=user_id, text=text_to_send)
+                elif state_to_process == "waiting_for_broadcast_photo": await context.bot.send_photo(chat_id=user_id, photo=photo_to_send, caption=text_to_send)
+                elif state_to_process == "waiting_for_broadcast_video": await context.bot.send_video(chat_id=user_id, video=video_to_send, caption=text_to_send)
+                sent_count += 1
+            except Exception as inner_e:
+                logger.error(f"Failed to send to {user_id} even after waiting: {inner_e}")
+                failed_count += 1
+        except Exception as e:
+            logger.warning(f"Failed to send broadcast to {user_id}: {e}")
+            failed_count += 1
+        
+        await asyncio.sleep(0.04) # تأخير أساسي بمقدار 0.04 ثانية بين كل رسالة
+
+    # إرسال تقرير للمشرف بعد انتهاء المهمة في الخلفية
+    summary_message_key = "broadcast_text_sent_summary" if "text" in state_to_process else "broadcast_media_sent_summary"
+    await context.bot.send_message(
+        chat_id=admin_chat_id,
+        text=MESSAGES[lang][summary_message_key].format(sent_count=sent_count, failed_count=failed_count)
+    )
+    logger.info(f"Background broadcast task finished for admin {admin_chat_id}.")
+# --- *** نهاية الدالة الجديدة *** ---
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cid, user = update.effective_chat.id, update.effective_user
     db.add_user_if_not_exists(cid, user.first_name, user.username)
@@ -402,56 +461,23 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info(f"User {cid} has not set a language. Defaulting to 'ar'.")
 
     user_state = db.get_user_state(cid)
-    # --- *** بداية منطق البث الجماعي الآمن *** ---
+    
+    # --- *** بداية التعديل: منطق البث الجماعي الآمن والمستقل *** ---
     if cid in ADMIN_CHAT_IDS and user_state and "broadcast" in user_state.get("state", ""):
         
         state_to_process = user_state.get("state")
-        db.clear_user_state(cid) # إلغاء حالة البث لتجنب الإرسال المكرر
-
-        all_user_ids = db.get_all_user_chat_ids()
-        if not all_user_ids:
-            await update.message.reply_text("لا يوجد مستخدمون لإرسال البث لهم.")
-            return
-
-        await update.message.reply_text(MESSAGES[lang]["broadcast_started"].format(count=len(all_user_ids)))
-
-        sent_count = 0
-        failed_count = 0
+        # امسح حالة المستخدم فورًا
+        db.clear_user_state(cid)
         
-        text_to_send = update.message.text or update.message.caption
-        photo_to_send = update.message.photo[-1].file_id if update.message.photo else None
-        video_to_send = update.message.video.file_id if update.message.video else None
+        # أرسل رد فوري للمشرف
+        await update.message.reply_text(MESSAGES[lang]["broadcast_started"])
 
-        for user_id in all_user_ids:
-            try:
-                if state_to_process == "waiting_for_broadcast_text":
-                    if not text_to_send: continue
-                    await context.bot.send_message(chat_id=user_id, text=text_to_send)
-                elif state_to_process == "waiting_for_broadcast_photo":
-                    if not photo_to_send: continue
-                    await context.bot.send_photo(chat_id=user_id, photo=photo_to_send, caption=text_to_send)
-                elif state_to_process == "waiting_for_broadcast_video":
-                    if not video_to_send: continue
-                    await context.bot.send_video(chat_id=user_id, video=video_to_send, caption=text_to_send)
-                
-                sent_count += 1
-
-            except RetryAfter as e:
-                logger.warning(f"Flood control exceeded. Waiting for {e.retry_after} seconds.")
-                await asyncio.sleep(e.retry_after + 1)
-                failed_count += 1
-            except Exception as e:
-                logger.warning(f"Failed to send broadcast to {user_id}: {e}")
-                failed_count += 1
-            
-            await asyncio.sleep(0.04) # تأخير أساسي بمقدار 0.04 ثانية بين كل رسالة
-
-        summary_message_key = "broadcast_text_sent_summary" if "text" in state_to_process else "broadcast_media_sent_summary"
-        await update.message.reply_text(
-            MESSAGES[lang][summary_message_key].format(sent_count=sent_count, failed_count=failed_count)
-        )
-        return # مهم: إنهاء الدالة بعد معالجة البث
-    # --- *** نهاية منطق البث الجماعي الآمن *** ---
+        # قم بإنشاء مهمة جديدة تعمل في الخلفية
+        asyncio.create_task(execute_broadcast(context, cid, update.message, lang, state_to_process))
+        
+        # إنهاء الدالة فورًا للسماح للبوت باستقبال طلبات أخرى
+        return
+    # --- *** نهاية التعديل *** ---
 
     if user_state and user_state.get("state") == "waiting_for_profit_amount":
         user_msg_text = update.message.text.strip() if update.message.text else ""
@@ -541,7 +567,6 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await temp_message.delete(); logger.error(f"Unexpected error for {sym}: {e}")
         await update.message.reply_text(MESSAGES[lang]["error"].format(sym=sym, err=str(e)), parse_mode=ParseMode.HTML)
-# --- *** نهاية التعديل على دالة handle_message *** ---
 
 
 async def show_financial_report(update: Update, context: ContextTypes.DEFAULT_TYPE):

@@ -39,21 +39,252 @@ import matplotlib.pyplot as plt
 import arabic_reshaper
 from bidi.algorithm import get_display
 
+# === Company Origin Mapping ===
+COUNTRY_ADJ = {
+    "United States": {"ar": "أمريكية", "en": "United States"},
+    "Israel": {"ar": "إسرائيلية", "en": "Israel"},
+    "China": {"ar": "صينية", "en": "China"},
+    "Canada": {"ar": "كندية", "en": "Canada"},
+    "United Kingdom": {"ar": "بريطانية", "en": "United Kingdom"},
+    "Ireland": {"ar": "إيرلندية", "en": "Ireland"},
+    "Brazil": {"ar": "برازيلية", "en": "Brazil"},
+    "Argentina": {"ar": "أرجنتينية", "en": "Argentina"},
+    "Mexico": {"ar": "مكسيكية", "en": "Mexico"},
+    "Japan": {"ar": "يابانية", "en": "Japan"},
+    "Korea, Republic of": {"ar": "كورية جنوبية", "en": "South Korea"},
+    "India": {"ar": "هندية", "en": "India"},
+    "Netherlands": {"ar": "هولندية", "en": "Netherlands"},
+    "Germany": {"ar": "ألمانية", "en": "Germany"},
+    "France": {"ar": "فرنسية", "en": "France"},
+    "Switzerland": {"ar": "سويسرية", "en": "Switzerland"},
+    "Spain": {"ar": "إسبانية", "en": "Spain"},
+    "Italy": {"ar": "إيطالية", "en": "Italy"},
+    "Sweden": {"ar": "سويدية", "en": "Sweden"},
+    "Norway": {"ar": "نرويجية", "en": "Norway"},
+    "Denmark": {"ar": "دنماركية", "en": "Denmark"},
+    "Finland": {"ar": "فنلندية", "en": "Finland"},
+    "Australia": {"ar": "أسترالية", "en": "Australia"},
+    "New Zealand": {"ar": "نيوزيلندية", "en": "New Zealand"},
+    "Hong Kong": {"ar": "هونغ كونغ", "en": "Hong Kong"},
+    "Taiwan": {"ar": "تايوانية", "en": "Taiwan"},
+    "Singapore": {"ar": "سنغافورية", "en": "Singapore"},
+    "Saudi Arabia": {"ar": "سعودية", "en": "Saudi Arabia"},
+    "United Arab Emirates": {"ar": "إماراتية", "en": "United Arab Emirates"},
+    "Qatar": {"ar": "قطرية", "en": "Qatar"},
+    "Turkey": {"ar": "تركية", "en": "Turkey"},
+    "South Africa": {"ar": "جنوب أفريقية", "en": "South Africa"},
+    "Russian Federation": {"ar": "روسية", "en": "Russia"},
+    "Egypt": {"ar": "مصرية", "en": "Egypt"},
+    "Bermuda": {"ar": "برمودا", "en": "Bermuda"},
+}
+def to_country_label(country: str, lang: str) -> str:
+    if not country:
+        return "غير معروفة" if lang == "ar" else "N/A"
+    entry = COUNTRY_ADJ.get(country)
+    if entry:
+        return entry["ar"] if lang == "ar" else entry["en"]
+    # Fallback: ترجمة تلقائية لو اللغة عربية
+    if lang == "ar":
+        try:
+            return manual_or_translate(country, "ar")
+        except Exception:
+            return country
+    return country
+
 # --- الثوابت والقواميس (بدون تغيير) ---
-SECTOR_MANUAL_TRANSLATE = { "Internet Content & Information": "محتوى الإنترنت والمعلومات", "Financial Services": "الخدمات المالية", "Asset Management": "إدارة الأصول", "Insurance - Life": "تأمين على الحياة", "Tobacco": "التبغ", "Banks": "البنوك", "Alcohol": "الخمور", "Gambling": "المقامرة", "Pork": "لحوم الخنزير", "Consumer Defensive": "الدفاع الاستهلاكي", "Semiconductors": "أشباه الموصلات", "Software - Infrastructure": "البرمجيات - البنية التحتية", "Software - Application": "البرمجيات - التطبيقات", "Biotechnology": "التكنولوجيا الحيوية", "Pharmaceuticals": "المستحضرات الصيدلانية", "Beverages - Brewers": "المشروبات - البيرة", "Resorts & Casinos": "المنتجعات والكازينوهات", "Entertainment": "ترفيه", "Beverages - Non-Alcoholic": "المشروبات - غير الكحولية",}
+SECTOR_MANUAL_TRANSLATE = {
+    "Internet Content & Information": "محتوى الإنترنت والمعلومات",
+    "Financial Services": "الخدمات المالية",
+    "Asset Management": "إدارة الأصول",
+    "Insurance - Life": "تأمين على الحياة",
+    "Tobacco": "التبغ",
+    "Banks": "البنوك",
+    "Alcohol": "الخمور",
+    "Gambling": "المقامرة",
+    "Pork": "لحوم الخنزير",
+    "Consumer Defensive": "الدفاع الاستهلاكي",
+    "Semiconductors": "أشباه الموصلات",
+    "Software - Infrastructure": "البرمجيات - البنية التحتية",
+    "Software - Application": "البرمجيات - التطبيقات",
+    "Biotechnology": "التكنولوجيا الحيوية",
+    "Pharmaceuticals": "المستحضرات الصيدلانية",
+    "Beverages - Brewers": "المشروبات - البيرة",
+    "Resorts & Casinos": "المنتجعات والكازينوهات",
+    "Entertainment": "ترفيه",
+    "Beverages - Non-Alcoholic": "المشروبات - غير الكحولية",
+}
 TRANSLATION_CACHE = {}
 ADMIN_CHAT_IDS = [7567496609, 649684756]
-HARAM_KEYWORDS = ["الخمور", "الخمر", "تداول الديون", "السندات", "المقامره", "المقامرة", "القمار", "البنوك", "البنك", "التبغ", "لحوم الخنزير", "الخنزير", "شركات المجون", "الأفلام الخليعة", "شركات الأفلام الخليعة", "التأمين", "تأمين الحياة", "تأمين على الحياة", "الخدمات المالية", "إدارة الأصول", "المشروبات", "البيرة", "المنتجعات", "الكازينوهات", "ترفيه", "الترفيه والتسلية", "alcohol", "liquor", "brewery", "wine", "pork", "swine", "gambling", "casino", "betting", "lottery", "banks", "bank", "porn", "pornography", "adult", "erotic", "bond", "debt", "insurance", "life insurance", "financial services", "asset management", "assets management", "tobacco", "beverages", "brewers", "resorts & casinos", "resorts", "casinos", "entertainment", "Leisure & Entertainment"]
+HARAM_KEYWORDS = [
+    "الخمور","الخمر","تداول الديون","السندات","المقامره","المقامرة","القمار","البنوك","البنك",
+    "التبغ","لحوم الخنزير","الخنزير","شركات المجون","الأفلام الخليعة","شركات الأفلام الخليعة",
+    "التأمين","تأمين الحياة","تأمين على الحياة","الخدمات المالية","إدارة الأصول","المشروبات","البيرة",
+    "المنتجعات","الكازينوهات","ترفيه","الترفيه والتسلية",
+    "alcohol","liquor","brewery","wine","pork","swine","gambling","casino","betting","lottery",
+    "banks","bank","porn","pornography","adult","erotic","bond","debt","insurance","life insurance",
+    "financial services","asset management","assets management","tobacco","beverages","brewers",
+    "resorts & casinos","resorts","casinos","entertainment","Leisure & Entertainment"
+]
 def is_haram_activity(sector, subsector):
     if subsector and "non-alcoholic" in subsector.lower(): return False
     text = f"{sector or ''} {subsector or ''}".lower()
     for word in HARAM_KEYWORDS:
         if word.lower() in text: return True
     return False
+
 SAR_EXCHANGE_RATE = 3.75
-MESSAGES = { "en": { "choose_lang": "Please choose your language:", "lang_set": "✅ Language set to English.\n\n👋 Hello {user_mention}! Send me a stock symbol (e.g. Nvda or Tsla).", "start": "👋 Hello {user_mention}! Send me a stock symbol (e.g. Nvda or Tsla).", "searching": "Searching for {sym}... ⏳", "not_found": "⚠️ The symbol '{sym}' is not supported.", "error": "❗ An unexpected error occurred while fetching data for '{sym}':\n{err}", "rate_limit": "Please wait {delta} seconds before trying again.", "help": ("/start – Start bot\n" "/lang  – Change language\n" "/help  – Show help\n\n" "Usage:\n" "1. First send /start and choose your language.\n" "2. Then send a stock symbol to get its full results.\n" "You don’t need to send /start again each time."), "header": "📈 Shariah status for {company} ({sym}):", "sector": "• Sector: {sec}", "subsector": "• Sub-sector: {sub}", "financial_report_header": "📊 Financial Report for {company} ({sym}):", "compliance_statuses": {"compliant": "Sharia-compliant ✅", "non_compliant": "Not Sharia-compliant ❌", "haram_activity": "Activity is not Sharia-compliant ❌", "unknown": "Unknown ❓"}, "not_available": "Currently unknown", "report_date": "• Report Date: {date}", "purification_ratio_display": "• Purification Ratio: {ratio}", "purification_mixed_text": " (Mixed)", "purification_pure_text": " (Pure)", "show_financial_report_button": "📊 Show Financial Report", "calculate_purification_button": "🧮 Purification Calculator", "choose_profit_type": "Please choose the type of profit for {sym}:", "profit_type_capital_gains": "Capital Gains (Sale Profit)", "profit_type_dividends": "Dividends (Profit Distributions)", "enter_profit_amount": "Please enter the {profit_type} amount for {sym} (e.g., 1000 or 50.5):", "purification_result_capital_gains": ("For your capital gains of {amount} from {company} ({sym}), the amount to purify is: {purified_amount_usd:.2f} $\n" "This is equivalent to Saudi Riyals: {purified_amount_sar:.2f} SR\n\n" "You can pay the purification amount on Ehsan platform via this link: https://ehsan.sa/stockspurification"), "purification_result_dividends": ("For your dividends of {amount} from {company} ({sym}), the amount to purify is: {purified_amount_usd:.2f} $\n" "This is equivalent to Saudi Riyals: {purified_amount_sar:.2f} SR\n\n" "You can pay the purification amount on Ehsan platform via this link: https://ehsan.sa/stockspurification"), "invalid_amount": "Invalid amount. Please enter a numerical value (e.g., 1000 or 50.5).", "data_expired": "Purification/financial data for '{sym}' is not found or expired. Please search for the stock again by sending its symbol.", "purification_not_available": "Calculation is not available for '{sym}' as its purification ratio is not provided.", "command_start_desc": "Start bot / بدأ البوت", "command_lang_desc": "Change language / تغير اللغة", "command_help_desc": "Show help / عرض المساعدة", "command_broadcast_text_desc": "Broadcast text message to all users", "command_broadcast_photo_desc": "Broadcast photo to all users", "command_broadcast_video_desc": "Broadcast video to all users", "command_stats_desc": "Show bot statistics (Admin)", "disclaimer_message": "\n\n<b>⚠️ Important Notice ⚠️</b>\n<b>We absolve ourselves before God from any error in calculating legality. We have made every effort to compile and update the databases, but the responsibility for your investment or speculative decision remains solely yours.</b>", "purification_not_allowed": "Sorry, calculation is not allowed for '{sym}' as it is not Shariah-compliant.", "purification_unavailable_for_calc": "Sorry, the purge for '{sym}' stock cannot be calculated because it is currently unknown.", "share_bot_button": "➡️ Share Bot", "connection_error": "⚠️ Could not connect to data server. Please try again later.", "not_authorized_admin": "You are not authorized to use this command.", "broadcast_text_usage": "Please reply to this message with the text you want to broadcast.", "broadcast_photo_usage": "Please reply to this message with the photo you want to broadcast.", "broadcast_video_usage": "Please reply to this message with the video you want to broadcast.", "broadcast_started": "✅ Broadcast request received. Messages will be sent in the background. You can continue using the bot normally.", "broadcast_text_sent_summary": "Text broadcast finished.\n✅ Sent successfully to {sent_count} users.\n❌ Failed to send to {failed_count} users.", "broadcast_media_sent_summary": "Media broadcast finished.\n✅ Sent successfully to {sent_count} users.\n❌ Failed to send to {failed_count} users.", "no_media_found": "No photo or video found in your message.", "no_text_found_for_broadcast": "No text found in your message.", "market_cap_update_label": "Last Updated", }, "ar": { "choose_lang": "اختر لغتك:", "lang_set": "✅ تم اختيار اللغة العربية.\n\n👋 أهلاً بك يا {user_mention}! أرسل رمز السهم (مثلاً Nvda أو Tsla).", "start": "👋 أهلاً بك يا {user_mention}! أرسل رمز السهم (مثلاً Nvda أو Tsla).", "searching": "جاري البحث عن {sym}... ⏳", "not_found": "⚠️ السهم '{sym}' غير مدعوم.", "error": "❗ حدث خطأ غير متوقع أثناء جلب البيانات للسهم '{sym}':\n{err}", "rate_limit": "يرجى الانتظار {delta} ثانية وإرسال طلبك مرة أخرى.", "help": ("/start – ابدأ البوت\n" "/lang  – غيّر اللغة\n" "/help  – عرض المساعدة\n\n" "طريقة الاستخدام:\n" "1. في المرة الأولى أرسل /start واختر اللغة.\n" "2. بعدها أرسل رمز السهم لتحصل على نتائجه كاملة.\n" "لا تحتاج لإعادة /start في كل مرة."), "header": "📈 شرعية سهم {company} ({sym}):", "sector": "• القطاع: {sec}", "subsector": "• القطاع الفرعي: {sub}", "financial_report_header": "📊 التقرير المالي لسهم {company} ({sym}):", "compliance_statuses": {"compliant": "متوافق مع الضوابط الشرعية ✅", "non_compliant": "غير متوافق مع الضوابط الشرعية ❌", "haram_activity": "نشاط الشركة غير شرعي ❌", "unknown": "غير محدد ❓"}, "not_available": "غير معروف حالياً", "report_date": "• تاريخ التقرير: {date}", "purification_ratio_display": "• نسبة التطهير: {ratio}", "purification_mixed_text": " (مختلط)", "purification_pure_text": " (نقي)", "show_financial_report_button": "📊 عرض التقرير المالي", "calculate_purification_button": "🧮 حاسبة التطهير", "choose_profit_type": "الرجاء اختيار نوع الربح لسهم {sym}:", "profit_type_capital_gains": "أرباح بيع (أرباح رأسمالية)", "profit_type_dividends": "توزيعات أرباح", "enter_profit_amount": "الرجاء إدخال مبلغ {profit_type} لسهم {sym} (مثلاً 1000 أو 50.5):", "purification_result_capital_gains": ("لربحك الرأسمالي البالغ {amount} من سهم {company} ({sym})، المبلغ الواجب تطهيره هو: {purified_amount_usd:.2f} $\n" "وهذا يعادل بالريال السعودي: {purified_amount_sar:.2f} SR\n\n" "بالإمكان دفع قيمة التطهير على موقع إحسان من خلال الرابط: https://ehsan.sa/stockspurification"), "purification_result_dividends": ("لتوزيعات أرباحك البالغة {amount} من سهم {company} ({sym})، المبلغ الواجب تطهيره هو: {purified_amount_usd:.2f} $\n" "وهذا يعادل بالريال السعودي: {purified_amount_sar:.2f} SR\n\n" "بالإمكان دفع قيمة التطهير على موقع إحسان من خلال الرابط: https://ehsan.sa/stockspurification"), "invalid_amount": "مبلغ غير صالح. الرجاء إدخال قيمة رقمية (مثلاً 1000 أو 50.5).", "data_expired": "بيانات التقرير منتهية الصلاحية أو غير موجودة. يرجى البحث عن السهم مرة أخرى بإرسال رمزه.", "disclaimer_message": "\n<b>⚠️ تنويه مهم ⚠️</b>\n<b>نُبرئ ذمّتنا ومسؤوليتنا أمام الله من أي خطأ في احتساب الشرعية. بذلنا جهدنا في جمع وتحديث قواعد البيانات، لكن تبقى مسؤولية القرار الاستثماري أو المضاربي عليك وحدك .</b>", "purification_not_allowed": "عذراً، لا يمكن حساب التطهير لسهم '{sym}' لأنه غير شرعي.", "purification_unavailable_for_calc": "عذراً، لا يمكن حساب التطهير لسهم '{sym}' لأنه غير معروف حالياً.", "share_bot_button": "➡️ مشاركة البوت", "connection_error": "⚠️ تعذر الاتصال بخادم البيانات. يرجى المحاولة لاحقاً.", "not_authorized_admin": "غير مصرح لك باستخدام هذا الأمر.", "broadcast_text_usage": "الرجاء الرد على هذه الرسالة بالنص الذي تريد نشره.", "broadcast_photo_usage": "الرجاء الرد على هذه الرسالة بالصورة التي تريد نشرها.", "broadcast_video_usage": "الرجاء الرد على هذه الرسالة بالفيديو الذي تريد نشرها.", "broadcast_started": "✅ تم استلام طلب البث، سيتم إرسال الرسائل في الخلفية. يمكنك الآن متابعة استخدام البوت بشكل طبيعي.", "broadcast_text_sent_summary": "انتهى البث النصي.\n✅ تم الإرسال بنجاح إلى {sent_count} مستخدم.\n❌ فشل الإرسال إلى {failed_count} مستخدم.", "broadcast_media_sent_summary": "انتهى بث الميديا.\n✅ تم الإرسال بنجاح إلى {sent_count} مستخدم.\n❌ فشل الإرسال إلى {failed_count} مستخدم.", "no_media_found": "لم يتم العثور على صورة أو فيديو في رسالتك.", "no_text_found_for_broadcast": "لم يتم العثور على نص في رسالتك.", "command_start_desc": "ابدا البوت", "command_lang_desc": "غير اللغة", "command_help_desc": "عرض المساعدة", "command_broadcast_text_desc": "نشر رسالة نصية لجميع المستخدمين", "command_broadcast_photo_desc": "نشر صورة لجميع المستخدمين", "command_broadcast_video_desc": "نشر فيديو لجميع المستخدمين", "command_stats_desc": "عرض إحصائيات البوت (للمسؤول)", "market_cap_update_label": "آخر تحديث", },
+MESSAGES = {
+    "en": {
+        "choose_lang": "Please choose your language:",
+        "lang_set": "✅ Language set to English.\n\n👋 Hello {user_mention}! Send me a stock symbol (e.g. Nvda or Tsla).",
+        "start": "👋 Hello {user_mention}! Send me a stock symbol (e.g. Nvda or Tsla).",
+        "searching": "Searching for {sym}... ⏳",
+        "not_found": "⚠️ The symbol '{sym}' is not supported.",
+        "error": "❗ An unexpected error occurred while fetching data for '{sym}':\n{err}",
+        "rate_limit": "Please wait {delta} seconds before trying again.",
+        "help": ("/start – Start bot\n"
+                 "/lang  – Change language\n"
+                 "/help  – Show help\n\n"
+                 "Usage:\n"
+                 "1. First send /start and choose your language.\n"
+                 "2. Then send a stock symbol to get its full results.\n"
+                 "You don’t need to send /start again each time."),
+        "header": "📈 Shariah status for {company} ({sym}):",
+        "sector": "• Sector: {sec}",
+        "subsector": "• Sub-sector: {sub}",
+        "financial_report_header": "📊 Financial Report for {company} ({sym}):",
+        "compliance_statuses": {
+            "compliant": "Sharia-compliant ✅",
+            "non_compliant": "Not Sharia-compliant ❌",
+            "haram_activity": "Activity is not Sharia-compliant ❌",
+            "unknown": "Unknown ❓"
+        },
+        "not_available": "Currently unknown",
+        "report_date": "• Report Date: {date}",
+        "purification_ratio_display": "• Purification Ratio: {ratio}",
+        "purification_mixed_text": " (Mixed)",
+        "purification_pure_text": " (Pure)",
+        "show_financial_report_button": "📊 Show Financial Report",
+        "calculate_purification_button": "🧮 Purification Calculator",
+        "choose_profit_type": "Please choose the type of profit for {sym}:",
+        "profit_type_capital_gains": "Capital Gains (Sale Profit)",
+        "profit_type_dividends": "Dividends (Profit Distributions)",
+        "enter_profit_amount": "Please enter the {profit_type} amount for {sym} (e.g., 1000 or 50.5):",
+        "purification_result_capital_gains": (
+            "For your capital gains of {amount} from {company} ({sym}), the amount to purify is: {purified_amount_usd:.2f} $\n"
+            "This is equivalent to Saudi Riyals: {purified_amount_sar:.2f} SR\n\n"
+            "You can pay the purification amount on Ehsan platform via this link: https://ehsan.sa/stockspurification"
+        ),
+        "purification_result_dividends": (
+            "For your dividends of {amount} from {company} ({sym}), the amount to purify is: {purified_amount_usd:.2f} $\n"
+            "This is equivalent to Saudi Riyals: {purified_amount_sar:.2f} SR\n\n"
+            "You can pay the purification amount on Ehsan platform via this link: https://ehsan.sa/stockspurification"
+        ),
+        "invalid_amount": "Invalid amount. Please enter a numerical value (e.g., 1000 or 50.5).",
+        "data_expired": "Purification/financial data for '{sym}' is not found or expired. Please search for the stock again by sending its symbol.",
+        "purification_not_available": "Calculation is not available for '{sym}' as its purification ratio is not provided.",
+        "command_start_desc": "Start bot / بدأ البوت",
+        "command_lang_desc": "Change language / تغير اللغة",
+        "command_help_desc": "Show help / عرض المساعدة",
+        "command_broadcast_text_desc": "Broadcast text message to all users",
+        "command_broadcast_photo_desc": "Broadcast photo to all users",
+        "command_broadcast_video_desc": "Broadcast video to all users",
+        "command_stats_desc": "Show bot statistics (Admin)",
+        "disclaimer_message": "\n\n<b>⚠️ Important Notice ⚠️</b>\n<b>We absolve ourselves before God from any error in calculating legality. We have made every effort to compile and update the databases, but the responsibility for your investment or speculative decision remains solely yours.</b>",
+        "purification_not_allowed": "Sorry, calculation is not allowed for '{sym}' as it is not Shariah-compliant.",
+        "purification_unavailable_for_calc": "Sorry, the purge for '{sym}' stock cannot be calculated because it is currently unknown.",
+        "share_bot_button": "➡️ Share Bot",
+        "connection_error": "⚠️ Could not connect to data server. Please try again later.",
+        "not_authorized_admin": "You are not authorized to use this command.",
+        "broadcast_text_usage": "Please reply to this message with the text you want to broadcast.",
+        "broadcast_photo_usage": "Please reply to this message with the photo you want to broadcast.",
+        "broadcast_video_usage": "Please reply to this message with the video you want to broadcast.",
+        "broadcast_started": "✅ Broadcast request received. Messages will be sent in the background. You can continue using the bot normally.",
+        "broadcast_text_sent_summary": "Text broadcast finished.\n✅ Sent successfully to {sent_count} users.\n❌ Failed to send to {failed_count} users.",
+        "broadcast_media_sent_summary": "Media broadcast finished.\n✅ Sent successfully to {sent_count} users.\n❌ Failed to send to {failed_count} users.",
+        "no_media_found": "No photo or video found in your message.",
+        "no_text_found_for_broadcast": "No text found in your message.",
+        "market_cap_update_label": "Last Updated",
+    },
+    "ar": {
+        "choose_lang": "اختر لغتك:",
+        "lang_set": "✅ تم اختيار اللغة العربية.\n\n👋 أهلاً بك يا {user_mention}! أرسل رمز السهم (مثلاً Nvda أو Tsla).",
+        "start": "👋 أهلاً بك يا {user_mention}! أرسل رمز السهم (مثلاً Nvda أو Tsla).",
+        "searching": "جاري البحث عن {sym}... ⏳",
+        "not_found": "⚠️ السهم '{sym}' غير مدعوم.",
+        "error": "❗ حدث خطأ غير متوقع أثناء جلب البيانات للسهم '{sym}':\n{err}",
+        "rate_limit": "يرجى الانتظار {delta} ثانية وإرسال طلبك مرة أخرى.",
+        "help": ("/start – ابدأ البوت\n"
+                 "/lang  – غيّر اللغة\n"
+                 "/help  – عرض المساعدة\n\n"
+                 "طريقة الاستخدام:\n"
+                 "1. في المرة الأولى أرسل /start واختر اللغة.\n"
+                 "2. بعدها أرسل رمز السهم لتحصل على نتائجه كاملة.\n"
+                 "لا تحتاج لإعادة /start في كل مرة."),
+        "header": "📈 شرعية سهم {company} ({sym}):",
+        "sector": "• القطاع: {sec}",
+        "subsector": "• القطاع الفرعي: {sub}",
+        "financial_report_header": "📊 التقرير المالي لسهم {company} ({sym}):",
+        "compliance_statuses": {
+            "compliant": "متوافق مع الضوابط الشرعية ✅",
+            "non_compliant": "غير متوافق مع الضوابط الشرعية ❌",
+            "haram_activity": "نشاط الشركة غير شرعي ❌",
+            "unknown": "غير محدد ❓"
+        },
+        "not_available": "غير معروف حالياً",
+        "report_date": "• تاريخ التقرير: {date}",
+        "purification_ratio_display": "• نسبة التطهير: {ratio}",
+        "purification_mixed_text": " (مختلط)",
+        "purification_pure_text": " (نقي)",
+        "show_financial_report_button": "📊 عرض التقرير المالي",
+        "calculate_purification_button": "🧮 حاسبة التطهير",
+        "choose_profit_type": "الرجاء اختيار نوع الربح لسهم {sym}:",
+        "profit_type_capital_gains": "أرباح بيع (أرباح رأسمالية)",
+        "profit_type_dividends": "توزيعات أرباح",
+        "enter_profit_amount": "الرجاء إدخال مبلغ {profit_type} لسهم {sym} (مثلاً 1000 أو 50.5):",
+        "purification_result_capital_gains": (
+            "لربحك الرأسمالي البالغ {amount} من سهم {company} ({sym})، المبلغ الواجب تطهيره هو: {purified_amount_usd:.2f} $\n"
+            "وهذا يعادل بالريال السعودي: {purified_amount_sar:.2f} SR\n\n"
+            "بالإمكان دفع قيمة التطهير على موقع إحسان من خلال الرابط: https://ehsan.sa/stockspurification"
+        ),
+        "purification_result_dividends": (
+            "لتوزيعات أرباحك البالغة {amount} من سهم {company} ({sym})، المبلغ الواجب تطهيره هو: {purified_amount_usd:.2f} $\n"
+            "وهذا يعادل بالريال السعودي: {purified_amount_sar:.2f} SR\n\n"
+            "بالإمكان دفع قيمة التطهير على موقع إحسان من خلال الرابط: https://ehsan.sa/stockspurification"
+        ),
+        "invalid_amount": "مبلغ غير صالح. الرجاء إدخال قيمة رقمية (مثلاً 1000 أو 50.5).",
+        "data_expired": "بيانات التقرير منتهية الصلاحية أو غير موجودة. يرجى البحث عن السهم مرة أخرى بإرسال رمزه.",
+        "disclaimer_message": "\n<b>⚠️ تنويه مهم ⚠️</b>\n<b>نُبرئ ذمّتنا ومسؤوليتنا أمام الله من أي خطأ في احتساب الشرعية. بذلنا جهدنا في جمع وتحديث قواعد البيانات، لكن تبقى مسؤولية القرار الاستثماري أو المضاربي عليك وحدك .</b>",
+        "purification_not_allowed": "عذراً، لا يمكن حساب التطهير لسهم '{sym}' لأنه غير شرعي.",
+        "purification_unavailable_for_calc": "عذراً، لا يمكن حساب التطهير لسهم '{sym}' لأنه غير معروف حالياً.",
+        "share_bot_button": "➡️ مشاركة البوت",
+        "connection_error": "⚠️ تعذر الاتصال بخادم البيانات. يرجى المحاولة لاحقاً.",
+        "not_authorized_admin": "غير مصرح لك باستخدام هذا الأمر.",
+        "broadcast_text_usage": "الرجاء الرد على هذه الرسالة بالنص الذي تريد نشره.",
+        "broadcast_photo_usage": "الرجاء الرد على هذه الرسالة بالصورة التي تريد نشرها.",
+        "broadcast_video_usage": "الرجاء الرد على هذه الرسالة بالفيديو الذي تريد نشرها.",
+        "broadcast_started": "✅ تم استلام طلب البث، سيتم إرسال الرسائل في الخلفية. يمكنك الآن متابعة استخدام البوت بشكل طبيعي.",
+        "broadcast_text_sent_summary": "انتهى البث النصي.\n✅ تم الإرسال بنجاح إلى {sent_count} مستخدم.\n❌ فشل الإرسال إلى {failed_count} مستخدم.",
+        "broadcast_media_sent_summary": "انتهى بث الميديا.\n✅ تم الإرسال بنجاح إلى {sent_count} مستخدم.\n❌ فشل الإرسال إلى {failed_count} مستخدم.",
+        "no_media_found": "لم يتم العثور على صورة أو فيديو في رسالتك.",
+        "no_text_found_for_broadcast": "لم يتم العثور على نص في رسالتك.",
+        "command_start_desc": "ابدا البوت",
+        "command_lang_desc": "غير اللغة",
+        "command_help_desc": "عرض المساعدة",
+        "command_broadcast_text_desc": "نشر رسالة نصية لجميع المستخدمين",
+        "command_broadcast_photo_desc": "نشر صورة لجميع المستخدمين",
+        "command_broadcast_video_desc": "نشر فيديو لجميع المستخدمين",
+        "command_stats_desc": "عرض إحصائيات البوت (للمسؤول)",
+        "market_cap_update_label": "آخر تحديث",
+    },
 }
-BANK_NAMES = { "بنك البلاد": {"en": "Bank Albilad", "ar": "بنك البلاد"}, "بنك الراجحي": {"en": "Al Rajhi Bank", "ar": "بنك الراجحي"},}
+BANK_NAMES = {
+    "بنك البلاد": {"en": "Bank Albilad", "ar": "بنك البلاد"},
+    "بنك الراجحي": {"en": "Al Rajhi Bank", "ar": "بنك الراجحي"},
+}
+
+# دول نُجبر عليها عدم التوافق الشرعي دائمًا
+BLOCKED_COUNTRIES_FORCE_NON_COMPLIANT = {"israel"}
 
 logging.basicConfig(format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -145,6 +376,7 @@ def fetch_yfinance(symbol: str):
     company_all = info.get("longName", info.get("shortName", symbol))
     sector = info.get("sector")
     subsector = info.get("industry")
+    company_country = info.get("country")
     haram = is_haram_activity(sector, subsector)
 
     market_cap = info.get("marketCap")
@@ -252,14 +484,36 @@ def fetch_yfinance(symbol: str):
     bilad_status = get_compliance_status("Al-Bilad")
     rajhi_status = get_compliance_status("Al-Rajhi")
 
+    # إجبار "غير متوافق" لأي شركة بلدها إسرائيل
+    if (company_country or "").strip().lower() in BLOCKED_COUNTRIES_FORCE_NON_COMPLIANT:
+        bilad_status = "non_compliant"
+        rajhi_status = "non_compliant"
+
     compliance_results = [("بنك البلاد", bilad_status), ("بنك الراجحي", rajhi_status)]
     report_date = str(ticker.quarterly_financials.columns[0].date()) if 'ticker' in locals() and ticker and not ticker.quarterly_financials.empty else MESSAGES["ar"]["not_available"]
 
-    return company_all, sector, subsector, compliance_results, {"market_cap": market_cap, "total_revenue": total_revenue, "total_debt": total_debt, "interest_income": interest_income, "total_assets": total_assets, "purification_ratio": purification_ratio}, report_date, interest_income, total_revenue
+    return company_all, sector, subsector, compliance_results, {
+        "market_cap": market_cap,
+        "total_revenue": total_revenue,
+        "total_debt": total_debt,
+        "interest_income": interest_income,
+        "total_assets": total_assets,
+        "purification_ratio": purification_ratio,
+        "country": company_country
+    }, report_date, interest_income, total_revenue
 
 def _build_financial_report_text(lang, company, sym, metrics_data, report_date, interest_income, total_revenue, market_cap_update_time=None):
     parts = [MESSAGES[lang]["financial_report_header"].format(company=company, sym=sym)]
-    financial_metrics_config = {"market_cap": {"ar": "القيمة السوقية", "en": "Market Cap"}, "total_revenue": {"ar": "مجموع الإيرادات", "en": "Total Revenue"}, "total_debt": {"ar": "إجمالي الديون", "en": "Total Debt"}, "interest_income": {"ar": "الدخل من الفوائد", "en": "Interest Income"}, "interest_income_ratio": {"ar": "الدخل من الفوائد/مجموع الإيرادات", "en": "Interest Income/Total Revenue"}, "total_debt_market_cap_ratio": {"ar": "مجموع الديون/القيمة السوقية", "en": "Total Debt/Market Cap"}, "total_assets": {"ar": "إجمالي الأصول", "en": "Total Assets"}, "debt_to_assets_ratio": {"ar": "نسبة الدين إلى الأصل", "en": "Debt to Assets Ratio"}}
+    financial_metrics_config = {
+        "market_cap": {"ar": "القيمة السوقية", "en": "Market Cap"},
+        "total_revenue": {"ar": "مجموع الإيرادات", "en": "Total Revenue"},
+        "total_debt": {"ar": "إجمالي الديون", "en": "Total Debt"},
+        "interest_income": {"ar": "الدخل من الفوائد", "en": "Interest Income"},
+        "interest_income_ratio": {"ar": "الدخل من الفوائد/مجموع الإيرادات", "en": "Interest Income/Total Revenue"},
+        "total_debt_market_cap_ratio": {"ar": "مجموع الديون/القيمة السوقية", "en": "Total Debt/Market Cap"},
+        "total_assets": {"ar": "إجمالي الأصول", "en": "Total Assets"},
+        "debt_to_assets_ratio": {"ar": "نسبة الدين إلى الأصل", "en": "Debt to Assets Ratio"}
+    }
 
     def get_formatted_value(key, value, lang):
         if key == "interest_income":
@@ -274,12 +528,15 @@ def _build_financial_report_text(lang, company, sym, metrics_data, report_date, 
                 return f"{ratio_val/total_revenue:.2%}"
             return MESSAGES[lang]["not_available"]
         elif key == "total_debt_market_cap_ratio":
-            if metrics_data.get("total_debt") is not None and metrics_data.get("market_cap", 0) > 0: return f"{metrics_data['total_debt']/metrics_data['market_cap']:.2%}"
+            if metrics_data.get("total_debt") is not None and metrics_data.get("market_cap", 0) > 0:
+                return f"{metrics_data['total_debt']/metrics_data['market_cap']:.2%}"
             return MESSAGES[lang]["not_available"]
         elif key == "debt_to_assets_ratio":
-            if metrics_data.get("total_debt") is not None and metrics_data.get("total_assets", 0) > 0: return f"{metrics_data['total_debt']/metrics_data['total_assets']:.2%}"
+            if metrics_data.get("total_debt") is not None and metrics_data.get("total_assets", 0) > 0:
+                return f"{metrics_data['total_debt']/metrics_data['total_assets']:.2%}"
             return MESSAGES[lang]["not_available"]
-        else: return nice(value, lang)
+        else:
+            return nice(value, lang)
 
     for key, names in financial_metrics_config.items():
         parts.append(f"• {names[lang]}: {get_formatted_value(key, metrics_data.get(key), lang)}")
@@ -294,9 +551,9 @@ def _build_financial_report_text(lang, company, sym, metrics_data, report_date, 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     is_new_user = db.add_user_if_not_exists(user.id, user.first_name, user.username)
-    
     if is_new_user:
-        kb = [[InlineKeyboardButton("English", callback_data="lang:en"), InlineKeyboardButton("العربية", callback_data="lang:ar")]]
+        kb = [[InlineKeyboardButton("English", callback_data="lang:en"),
+               InlineKeyboardButton("العربية", callback_data="lang:ar")]]
         await update.message.reply_text(MESSAGES["en"]["choose_lang"], reply_markup=InlineKeyboardMarkup(kb))
     else:
         lang = db.get_user_setting(user.id, 'language', 'ar')
@@ -305,7 +562,8 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def lang_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     lang = db.get_user_setting(update.effective_chat.id, 'language', 'ar')
-    kb = [[InlineKeyboardButton("English", callback_data="lang:en"), InlineKeyboardButton("العربية", callback_data="lang:ar")]]
+    kb = [[InlineKeyboardButton("English", callback_data="lang:en"),
+           InlineKeyboardButton("العربية", callback_data="lang:ar")]]
     await update.message.reply_text(MESSAGES[lang]["choose_lang"], reply_markup=InlineKeyboardMarkup(kb))
 
 async def on_lang_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -328,14 +586,17 @@ def create_stats_image(stats: dict) -> BytesIO:
 
     current_y = 0.96
 
-    fig.text(0.5, current_y, ar("📊 إحصائيات البوت الحية"), ha='center', va='center', fontsize=22, weight='bold')
+    fig.text(0.5, current_y, ar("📊 إحصائيات البوت الحية"),
+             ha='center', va='center', fontsize=22, weight='bold')
     current_y -= 0.08
 
     def draw_table_at(y_pos, height, ax_x, ax_width, title, data, col_labels, col_widths):
-        fig.text(ax_x + ax_width / 2, y_pos, ar(title), ha='center', va='bottom', fontsize=15, weight='bold')
+        fig.text(ax_x + ax_width / 2, y_pos, ar(title),
+                 ha='center', va='bottom', fontsize=15, weight='bold')
         ax = fig.add_axes([ax_x, y_pos - height, ax_width, height])
         ax.axis('off')
-        table = ax.table(cellText=data, colLabels=col_labels, colWidths=col_widths, cellLoc='center', loc='center')
+        table = ax.table(cellText=data, colLabels=col_labels, colWidths=col_widths,
+                         cellLoc='center', loc='center')
         table.auto_set_font_size(False)
         table.set_fontsize(11)
         table.scale(1, 1.9)
@@ -349,9 +610,28 @@ def create_stats_image(stats: dict) -> BytesIO:
                 cell.set_text_props(ha='right' if key[1] == 1 else 'center')
         return height + 0.05
 
-    user_data = [[ar(stats['total_users']), ar("الإجمالي")], [ar(stats['active_users_today']), ar("النشطون (اليوم)")], [ar(stats['active_users_week']), ar("النشطون (أسبوع)")], [ar(stats['active_users_month']), ar("النشطون (شهر)")], [ar(stats['new_users_today']), ar("الجدد (اليوم)")], [ar(stats['new_users_week']), ar("الجدد (أسبوع)")], [ar(stats['new_users_month']), ar("الجدد (شهر)")],]
-    search_data = [[ar(stats['total_searches']), ar("الإجمالي")], [ar(stats['searches_today']), ar("اليوم")], [ar(stats['searches_yesterday']), ar("أمس")], [ar(stats['searches_this_week']), ar("هذا الأسبوع")], [ar(stats['searches_last_week']), ar("الأسبوع الماضي")], [ar(stats['searches_this_month']), ar("هذا الشهر")], [ar(stats['searches_last_month']), ar("الشهر الماضي")], [ar(stats['searches_this_year']), ar("العام الحالي")], [ar(stats['searches_last_year']), ar("العام الماضي")],]
-    lang_data = [[ar(count), ar("العربية" if lang == 'ar' else "English")] for lang, count in stats['language_distribution'].items()] or [[ar(0), ar("لا يوجد")]]
+    user_data = [
+        [ar(stats['total_users']), ar("الإجمالي")],
+        [ar(stats['active_users_today']), ar("النشطون (اليوم)")],
+        [ar(stats['active_users_week']), ar("النشطون (أسبوع)")],
+        [ar(stats['active_users_month']), ar("النشطون (شهر)")],
+        [ar(stats['new_users_today']), ar("الجدد (اليوم)")],
+        [ar(stats['new_users_week']), ar("الجدد (أسبوع)")],
+        [ar(stats['new_users_month']), ar("الجدد (شهر)")],
+    ]
+    search_data = [
+        [ar(stats['total_searches']), ar("الإجمالي")],
+        [ar(stats['searches_today']), ar("اليوم")],
+        [ar(stats['searches_yesterday']), ar("أمس")],
+        [ar(stats['searches_this_week']), ar("هذا الأسبوع")],
+        [ar(stats['searches_last_week']), ar("الأسبوع الماضي")],
+        [ar(stats['searches_this_month']), ar("هذا الشهر")],
+        [ar(stats['searches_last_month']), ar("الشهر الماضي")],
+        [ar(stats['searches_this_year']), ar("العام الحالي")],
+        [ar(stats['searches_last_year']), ar("العام الماضي")],
+    ]
+    lang_data = [[ar(count), ar("العربية" if lang == 'ar' else "English")]
+                 for lang, count in stats['language_distribution'].items()] or [[ar(0), ar("لا يوجد")]]
 
     def format_stock_data(stock_list):
         if not stock_list: return [[ar("-"), ar("-")]]
@@ -388,19 +668,13 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Failed to generate stats image: {e}")
         await update.message.reply_text("حدث خطأ أثناء إنشاء صورة الإحصائيات. يرجى مراجعة السجلات.")
 
-# --- *** بداية التعديل: دالة جديدة لتنفيذ البث في الخلفية *** ---
+# --- دالة تنفيذ البث في الخلفية ---
 async def execute_broadcast(context: ContextTypes.DEFAULT_TYPE, admin_chat_id: int, message_to_broadcast: Update.message, lang: str, state_to_process: str):
-    """
-    هذه الدالة تقوم بتنفيذ عملية البث في الخلفية بشكل مستقل.
-    """
     logger.info(f"Starting background broadcast task for admin {admin_chat_id}...")
-    
-    # استخراج المحتوى من رسالة المشرف
     text_to_send = message_to_broadcast.text or message_to_broadcast.caption
     photo_to_send = message_to_broadcast.photo[-1].file_id if message_to_broadcast.photo else None
     video_to_send = message_to_broadcast.video.file_id if message_to_broadcast.video else None
-    
-    # جلب المستخدمين من قاعدة البيانات
+
     all_user_ids = db.get_all_user_chat_ids()
     if not all_user_ids:
         await context.bot.send_message(chat_id=admin_chat_id, text="لا يوجد مستخدمون لإرسال البث لهم.")
@@ -409,7 +683,6 @@ async def execute_broadcast(context: ContextTypes.DEFAULT_TYPE, admin_chat_id: i
     sent_count = 0
     failed_count = 0
 
-    # حلقة الإرسال لجميع المستخدمين
     for user_id in all_user_ids:
         try:
             if state_to_process == "waiting_for_broadcast_text":
@@ -421,16 +694,17 @@ async def execute_broadcast(context: ContextTypes.DEFAULT_TYPE, admin_chat_id: i
             elif state_to_process == "waiting_for_broadcast_video":
                 if not video_to_send: continue
                 await context.bot.send_video(chat_id=user_id, video=video_to_send, caption=text_to_send)
-            
             sent_count += 1
         except RetryAfter as e:
             logger.warning(f"Flood control exceeded. Waiting for {e.retry_after} seconds.")
             await asyncio.sleep(e.retry_after + 1)
-            # نعيد محاولة الإرسال لنفس المستخدم بعد الانتظار
             try:
-                if state_to_process == "waiting_for_broadcast_text": await context.bot.send_message(chat_id=user_id, text=text_to_send)
-                elif state_to_process == "waiting_for_broadcast_photo": await context.bot.send_photo(chat_id=user_id, photo=photo_to_send, caption=text_to_send)
-                elif state_to_process == "waiting_for_broadcast_video": await context.bot.send_video(chat_id=user_id, video=video_to_send, caption=text_to_send)
+                if state_to_process == "waiting_for_broadcast_text":
+                    await context.bot.send_message(chat_id=user_id, text=text_to_send)
+                elif state_to_process == "waiting_for_broadcast_photo":
+                    await context.bot.send_photo(chat_id=user_id, photo=photo_to_send, caption=text_to_send)
+                elif state_to_process == "waiting_for_broadcast_video":
+                    await context.bot.send_video(chat_id=user_id, video=video_to_send, caption=text_to_send)
                 sent_count += 1
             except Exception as inner_e:
                 logger.error(f"Failed to send to {user_id} even after waiting: {inner_e}")
@@ -438,17 +712,14 @@ async def execute_broadcast(context: ContextTypes.DEFAULT_TYPE, admin_chat_id: i
         except Exception as e:
             logger.warning(f"Failed to send broadcast to {user_id}: {e}")
             failed_count += 1
-        
-        await asyncio.sleep(0.04) # تأخير أساسي بمقدار 0.04 ثانية بين كل رسالة
+        await asyncio.sleep(0.04)
 
-    # إرسال تقرير للمشرف بعد انتهاء المهمة في الخلفية
     summary_message_key = "broadcast_text_sent_summary" if "text" in state_to_process else "broadcast_media_sent_summary"
     await context.bot.send_message(
         chat_id=admin_chat_id,
         text=MESSAGES[lang][summary_message_key].format(sent_count=sent_count, failed_count=failed_count)
     )
     logger.info(f"Background broadcast task finished for admin {admin_chat_id}.")
-# --- *** نهاية الدالة الجديدة *** ---
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cid, user = update.effective_chat.id, update.effective_user
@@ -461,23 +732,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.info(f"User {cid} has not set a language. Defaulting to 'ar'.")
 
     user_state = db.get_user_state(cid)
-    
-    # --- *** بداية التعديل: منطق البث الجماعي الآمن والمستقل *** ---
-    if cid in ADMIN_CHAT_IDS and user_state and "broadcast" in user_state.get("state", ""):
-        
-        state_to_process = user_state.get("state")
-        # امسح حالة المستخدم فورًا
-        db.clear_user_state(cid)
-        
-        # أرسل رد فوري للمشرف
-        await update.message.reply_text(MESSAGES[lang]["broadcast_started"])
 
-        # قم بإنشاء مهمة جديدة تعمل في الخلفية
+    # منطق البث الجماعي
+    if cid in ADMIN_CHAT_IDS and user_state and "broadcast" in user_state.get("state", ""):
+        state_to_process = user_state.get("state")
+        db.clear_user_state(cid)
+        await update.message.reply_text(MESSAGES[lang]["broadcast_started"])
         asyncio.create_task(execute_broadcast(context, cid, update.message, lang, state_to_process))
-        
-        # إنهاء الدالة فورًا للسماح للبوت باستقبال طلبات أخرى
         return
-    # --- *** نهاية التعديل *** ---
 
     if user_state and user_state.get("state") == "waiting_for_profit_amount":
         user_msg_text = update.message.text.strip() if update.message.text else ""
@@ -491,19 +753,24 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 return
             purified_amount_usd = profit_amount * (purification_ratio / 100)
             purified_amount_sar = purified_amount_usd * SAR_EXCHANGE_RATE
-            await update.message.reply_text(MESSAGES[lang][f"purification_result_{profit_type_key}"].format(amount=nice(profit_amount, lang), company=company, sym=sym, purified_amount_usd=purified_amount_usd, purified_amount_sar=purified_amount_sar,), parse_mode=ParseMode.HTML)
+            await update.message.reply_text(MESSAGES[lang][f"purification_result_{profit_type_key}"].format(
+                amount=nice(profit_amount, lang), company=company, sym=sym,
+                purified_amount_usd=purified_amount_usd, purified_amount_sar=purified_amount_sar
+            ), parse_mode=ParseMode.HTML)
         except ValueError:
             await update.message.reply_text(MESSAGES[lang]["invalid_amount"], parse_mode=ParseMode.HTML)
         return
 
     user_msg_text = update.message.text.strip() if update.message.text else ""
     cleaned_symbol = re.sub(r'[^a-zA-Z0-9.-]', '', user_msg_text)
-    if not cleaned_symbol: await update.message.reply_text(MESSAGES[lang]["not_found"].format(sym=user_msg_text)); return
+    if not cleaned_symbol:
+        await update.message.reply_text(MESSAGES[lang]["not_found"].format(sym=user_msg_text)); return
     sym = cleaned_symbol.upper()
     now = time.time()
     last_req_time = db.get_user_setting(cid, 'last_request_time', 0)
     delta = RATE_LIMIT_SECONDS - (now - last_req_time)
-    if delta > 0: await update.message.reply_text(MESSAGES[lang]["rate_limit"].format(delta=max(1, int(delta))), parse_mode=ParseMode.HTML); return
+    if delta > 0:
+        await update.message.reply_text(MESSAGES[lang]["rate_limit"].format(delta=max(1, int(delta))), parse_mode=ParseMode.HTML); return
     db.set_user_setting(cid, 'last_request_time', now)
     temp_message = await update.message.reply_text(MESSAGES[lang]["searching"].format(sym=sym))
     try:
@@ -512,16 +779,32 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             stock_data = fetch_yfinance(sym)
             db.cache_stock(sym, stock_data)
 
+        # --- إجبار عدم التوافق لو الدولة إسرائيل حتى لو رجعت من الكاش ---
+        (company_all, sector, subsector, compliance_results,
+         metrics_data, report_date, interest_income, total_revenue) = stock_data
+
+        country_norm = (metrics_data.get("country") or "").strip().lower()
+        if country_norm in BLOCKED_COUNTRIES_FORCE_NON_COMPLIANT:
+            compliance_results = [("بنك البلاد", "non_compliant"),
+                                  ("بنك الراجحي", "non_compliant")]
+            stock_data = (company_all, sector, subsector, compliance_results,
+                          metrics_data, report_date, interest_income, total_revenue)
+            # حدّث الكاش بالنتيجة الجديدة
+            db.cache_stock(sym, stock_data)
+
         db.log_search(cid, sym)
 
         company_all, sector, subsector, compliance_results, metrics_data, report_date, interest_income, total_revenue = stock_data
         match_company_name = re.search(r"[\u0600-\u06FFA-Za-z].*$", company_all)
         company = match_company_name.group(0) if match_company_name else company_all
         parts_shariah = [MESSAGES[lang]["header"].format(company=company, sym=sym)]
+        origin_label = to_country_label(metrics_data.get("country"), lang)
+        parts_shariah.append(("•• الشركة: {origin}" if lang == 'ar' else "•• Company: {origin}").format(origin=origin_label))
         if sector: parts_shariah.append(f"• {MESSAGES[lang]['sector'].split(':')[0]}: {manual_or_translate(sector, lang)}")
         if subsector: parts_shariah.append(f"• {MESSAGES[lang]['subsector'].split(':')[0]}: {manual_or_translate(subsector, lang)}")
         actual_compliance_statuses = [status_key for _, status_key in compliance_results]
-        for name_ar, status_key in compliance_results: parts_shariah.append(f"- {BANK_NAMES[name_ar][lang]}: {MESSAGES[lang]['compliance_statuses'][status_key]}")
+        for name_ar, status_key in compliance_results:
+            parts_shariah.append(f"- {BANK_NAMES[name_ar][lang]}: {MESSAGES[lang]['compliance_statuses'][status_key]}")
 
         pur_val = metrics_data.get("purification_ratio")
         pur_text = MESSAGES[lang]["not_available"]
@@ -529,7 +812,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         is_compliant_somewhere = "compliant" in actual_compliance_statuses
 
         if not is_compliant_somewhere:
-             pur_text = "❌"
+            pur_text = "❌"
         elif pur_val is not None and not math.isnan(pur_val):
             if pur_val > 0:
                 pur_text = f"{pur_val:.2f}%{MESSAGES[lang]['purification_mixed_text']}"
@@ -538,7 +821,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         parts_shariah.append(MESSAGES[lang]["purification_ratio_display"].format(ratio=pur_text))
         parts_shariah.append(MESSAGES[lang]["disclaimer_message"])
-        keyboard = [[InlineKeyboardButton(MESSAGES[lang]["show_financial_report_button"], callback_data=f"show_report:{sym}"), InlineKeyboardButton(MESSAGES[lang]["calculate_purification_button"], callback_data=f"calc_purify:{sym}")], [InlineKeyboardButton(MESSAGES[lang]["share_bot_button"], url=f"https://t.me/share/url?url=https://t.me/{context.bot.username}")]]
+        keyboard = [
+            [InlineKeyboardButton(MESSAGES[lang]["show_financial_report_button"], callback_data=f"show_report:{sym}"),
+             InlineKeyboardButton(MESSAGES[lang]["calculate_purification_button"], callback_data=f"calc_purify:{sym}")],
+            [InlineKeyboardButton(MESSAGES[lang]["share_bot_button"], url=f"https://t.me/share/url?url=https://t.me/{context.bot.username}")]
+        ]
 
         db.set_report_data(
             cid,
@@ -562,12 +849,13 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except ValueError as e:
         await temp_message.delete()
         error_msg = str(e)
-        if "not_found" in error_msg: await update.message.reply_text(MESSAGES[lang]["not_found"].format(sym=sym), parse_mode=ParseMode.HTML)
-        else: await update.message.reply_text(MESSAGES[lang]["error"].format(sym=sym, err=error_msg), parse_mode=ParseMode.HTML)
+        if "not_found" in error_msg:
+            await update.message.reply_text(MESSAGES[lang]["not_found"].format(sym=sym), parse_mode=ParseMode.HTML)
+        else:
+            await update.message.reply_text(MESSAGES[lang]["error"].format(sym=sym, err=error_msg), parse_mode=ParseMode.HTML)
     except Exception as e:
         await temp_message.delete(); logger.error(f"Unexpected error for {sym}: {e}")
         await update.message.reply_text(MESSAGES[lang]["error"].format(sym=sym, err=str(e)), parse_mode=ParseMode.HTML)
-
 
 async def show_financial_report(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()
@@ -592,7 +880,6 @@ async def show_financial_report(update: Update, context: ContextTypes.DEFAULT_TY
         lang_code = db.get_user_setting(cid, 'language', 'ar')
         await q.message.reply_text(MESSAGES[lang_code]["data_expired"].format(sym=sym), parse_mode=ParseMode.HTML)
 
-
 async def calculate_purification_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()
     cid, sym = q.from_user.id, q.data.split(":")[-1]
@@ -605,9 +892,13 @@ async def calculate_purification_callback(update: Update, context: ContextTypes.
         if purification_ratio is None or math.isnan(purification_ratio):
             await q.message.reply_text(MESSAGES[lang]["purification_unavailable_for_calc"].format(sym=sym), parse_mode=ParseMode.HTML); return
         db.set_user_state(cid, {"state": "waiting_for_profit_type", "sym": sym, "company": report_data["company"], "purification_ratio": purification_ratio})
-        keyboard = [[InlineKeyboardButton(MESSAGES[lang]["profit_type_capital_gains"], callback_data=f"profit_type:capital_gains:{sym}")], [InlineKeyboardButton(MESSAGES[lang]["profit_type_dividends"], callback_data=f"profit_type:dividends:{sym}")]]
+        keyboard = [
+            [InlineKeyboardButton(MESSAGES[lang]["profit_type_capital_gains"], callback_data=f"profit_type:capital_gains:{sym}")],
+            [InlineKeyboardButton(MESSAGES[lang]["profit_type_dividends"], callback_data=f"profit_type:dividends:{sym}")]
+        ]
         await q.message.reply_text(MESSAGES[lang]["choose_profit_type"].format(sym=sym), reply_markup=InlineKeyboardMarkup(keyboard), parse_mode=ParseMode.HTML)
-    else: await q.message.reply_text(MESSAGES[db.get_user_setting(cid, 'language', 'ar')]["data_expired"].format(sym=sym), parse_mode=ParseMode.HTML)
+    else:
+        await q.message.reply_text(MESSAGES[db.get_user_setting(cid, 'language', 'ar')]["data_expired"].format(sym=sym), parse_mode=ParseMode.HTML)
 
 async def handle_profit_type_selection(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query; await q.answer()
@@ -619,48 +910,81 @@ async def handle_profit_type_selection(update: Update, context: ContextTypes.DEF
         state_data["state"] = "waiting_for_profit_amount"; state_data["profit_type_key"] = profit_type_key
         db.set_user_state(cid, state_data)
         await q.edit_message_text(MESSAGES[lang]["enter_profit_amount"].format(profit_type=MESSAGES[lang][f"profit_type_{profit_type_key}"], sym=sym), parse_mode=ParseMode.HTML)
-    else: await q.message.reply_text(MESSAGES[lang]["data_expired"].format(sym=sym), parse_mode=ParseMode.HTML)
+    else:
+        await q.message.reply_text(MESSAGES[lang]["data_expired"].format(sym=sym), parse_mode=ParseMode.HTML)
 
 async def broadcast_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cid, lang = update.effective_chat.id, db.get_user_setting(update.effective_chat.id, 'language', 'ar')
-    if cid not in ADMIN_CHAT_IDS: await update.message.reply_text(MESSAGES[lang]["not_authorized_admin"]); return
-    db.set_user_state(cid, {"state": "waiting_for_broadcast_text"}); await update.message.reply_text(MESSAGES[lang]["broadcast_text_usage"])
+    if cid not in ADMIN_CHAT_IDS:
+        await update.message.reply_text(MESSAGES[lang]["not_authorized_admin"]); return
+    db.set_user_state(cid, {"state": "waiting_for_broadcast_text"})
+    await update.message.reply_text(MESSAGES[lang]["broadcast_text_usage"])
 
 async def broadcast_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cid, lang = update.effective_chat.id, db.get_user_setting(update.effective_chat.id, 'language', 'ar')
-    if cid not in ADMIN_CHAT_IDS: await update.message.reply_text(MESSAGES[lang]["not_authorized_admin"]); return
-    db.set_user_state(cid, {"state": "waiting_for_broadcast_photo"}); await update.message.reply_text(MESSAGES[lang]["broadcast_photo_usage"])
+    if cid not in ADMIN_CHAT_IDS:
+        await update.message.reply_text(MESSAGES[lang]["not_authorized_admin"]); return
+    db.set_user_state(cid, {"state": "waiting_for_broadcast_photo"})
+    await update.message.reply_text(MESSAGES[lang]["broadcast_photo_usage"])
 
 async def broadcast_video(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cid, lang = update.effective_chat.id, db.get_user_setting(update.effective_chat.id, 'language', 'ar')
-    if cid not in ADMIN_CHAT_IDS: await update.message.reply_text(MESSAGES[lang]["not_authorized_admin"]); return
-    db.set_user_state(cid, {"state": "waiting_for_broadcast_video"}); await update.message.reply_text(MESSAGES[lang]["broadcast_video_usage"])
+    if cid not in ADMIN_CHAT_IDS:
+        await update.message.reply_text(MESSAGES[lang]["not_authorized_admin"]); return
+    db.set_user_state(cid, {"state": "waiting_for_broadcast_video"})
+    await update.message.reply_text(MESSAGES[lang]["broadcast_video_usage"])
 
 async def on_startup(app: ApplicationBuilder):
-    general_commands = [BotCommand("start", MESSAGES["en"]["command_start_desc"]), BotCommand("lang", MESSAGES["en"]["command_lang_desc"]), BotCommand("help", MESSAGES["en"]["command_help_desc"])]
+    general_commands = [
+        BotCommand("start", MESSAGES["en"]["command_start_desc"]),
+        BotCommand("lang", MESSAGES["en"]["command_lang_desc"]),
+        BotCommand("help", MESSAGES["en"]["command_help_desc"])
+    ]
     await app.bot.set_my_commands(general_commands, scope=BotCommandScopeDefault())
-    admin_commands = general_commands + [BotCommand("stats", MESSAGES["ar"]["command_stats_desc"]), BotCommand("broadcast_text", MESSAGES["ar"]["command_broadcast_text_desc"]), BotCommand("broadcast_photo", MESSAGES["ar"]["command_broadcast_photo_desc"]), BotCommand("broadcast_video", MESSAGES["ar"]["command_broadcast_video_desc"])]
+    admin_commands = general_commands + [
+        BotCommand("stats", MESSAGES["ar"]["command_stats_desc"]),
+        BotCommand("broadcast_text", MESSAGES["ar"]["command_broadcast_text_desc"]),
+        BotCommand("broadcast_photo", MESSAGES["ar"]["command_broadcast_photo_desc"]),
+        BotCommand("broadcast_video", MESSAGES["ar"]["command_broadcast_video_desc"])
+    ]
     for admin_id in ADMIN_CHAT_IDS:
         try:
             await app.bot.set_my_commands(admin_commands, scope=BotCommandScopeChat(chat_id=admin_id))
             logger.info(f"Set admin commands for chat ID: {admin_id}")
-        except Exception as e: logger.error(f"Failed to set admin commands for {admin_id}: {e}")
+        except Exception as e:
+            logger.error(f"Failed to set admin commands for {admin_id}: {e}")
 
 def main():
     logger.info("Initializing database...")
     db.initialize_database()
     logger.info("Database initialization complete.")
-    app = (ApplicationBuilder().token(TELEGRAM_TOKEN).arbitrary_callback_data(True).post_init(on_startup).build())
-    app.add_handler(CommandHandler("start", start)); app.add_handler(CommandHandler("lang", lang_cmd)); app.add_handler(CommandHandler("help", help_cmd)); app.add_handler(CommandHandler("stats", stats_cmd))
-    app.add_handler(CommandHandler("broadcast_text", broadcast_text)); app.add_handler(CommandHandler("broadcast_photo", broadcast_photo)); app.add_handler(CommandHandler("broadcast_video", broadcast_video))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)); app.add_handler(MessageHandler((filters.PHOTO | filters.VIDEO) & ~filters.COMMAND, handle_message))
+    app = (ApplicationBuilder()
+           .token(TELEGRAM_TOKEN)
+           .arbitrary_callback_data(True)
+           .post_init(on_startup)
+           .build())
+    app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("lang", lang_cmd))
+    app.add_handler(CommandHandler("help", help_cmd))
+    app.add_handler(CommandHandler("stats", stats_cmd))
+
+    app.add_handler(CommandHandler("broadcast_text", broadcast_text))
+    app.add_handler(CommandHandler("broadcast_photo", broadcast_photo))
+    app.add_handler(CommandHandler("broadcast_video", broadcast_video))
+
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    app.add_handler(MessageHandler((filters.PHOTO | filters.VIDEO) & ~filters.COMMAND, handle_message))
+
     app.add_handler(CallbackQueryHandler(on_lang_button, pattern="^lang:"))
     app.add_handler(CallbackQueryHandler(show_financial_report, pattern="^show_report:"))
     app.add_handler(CallbackQueryHandler(calculate_purification_callback, pattern="^calc_purify:"))
     app.add_handler(CallbackQueryHandler(handle_profit_type_selection, pattern="^profit_type:"))
+
     logger.info("Bot is running...")
     app.run_polling()
-    if db.conn: db.conn.close(); logger.info("Database connection closed.")
+    if db.conn:
+        db.conn.close()
+        logger.info("Database connection closed.")
 
 if __name__ == "__main__":
     main()
